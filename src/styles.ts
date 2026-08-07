@@ -175,6 +175,33 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
+  databaseBackupDescription: {
+    color: '#54635A',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  databaseBackupActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  databaseBackupButton: {
+    alignItems: 'center',
+    backgroundColor: '#EAF2F8',
+    borderColor: '#B8CEE0',
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    gap: 7,
+    justifyContent: 'center',
+    minHeight: 46,
+    paddingHorizontal: 10,
+  },
+  databaseBackupButtonText: {
+    color: '#215F9A',
+    fontSize: 14,
+    fontWeight: '800',
+  },
   dataModeRow: {
     backgroundColor: '#F7F7F2',
     borderColor: '#D8DED4',

@@ -47,6 +47,10 @@ import {
   removeWorkoutDraft,
   saveWorkoutDraft,
 } from './src/storage/workoutDraftStorage';
+import {
+  exportDatabaseBackup,
+  pickAndImportDatabaseBackup,
+} from './src/storage/databaseBackupStorage';
 
 type RootTabParamList = {
   Workout: undefined;
@@ -124,6 +128,7 @@ function SweatLogsApp() {
   const [savingExerciseRecordId, setSavingExerciseRecordId] = useState<string | null>(null);
   const [deletingExerciseRecordId, setDeletingExerciseRecordId] = useState<string | null>(null);
   const [isWorkoutDraftHydrated, setIsWorkoutDraftHydrated] = useState(false);
+  const [isTransferringDatabase, setIsTransferringDatabase] = useState(false);
   const noticeOpacity = useRef(new Animated.Value(0)).current;
   const plannerScrollRef = useRef<ScrollView>(null);
 
@@ -879,6 +884,85 @@ function SweatLogsApp() {
     setIsWorkoutStarted(false);
   };
 
+  const exportBackup = async () => {
+    if (isTransferringDatabase) {
+      return;
+    }
+
+    setIsTransferringDatabase(true);
+    try {
+      await exportDatabaseBackup();
+      setNotice({ tone: 'success', message: 'Database backup exported.' });
+    } catch (error) {
+      setNotice({
+        tone: 'error',
+        message: `Could not export database. ${getErrorMessage(error)}`,
+      });
+    } finally {
+      setIsTransferringDatabase(false);
+    }
+  };
+
+  const importBackup = async () => {
+    if (isTransferringDatabase) {
+      return;
+    }
+
+    setIsTransferringDatabase(true);
+    try {
+      const imported = await pickAndImportDatabaseBackup();
+      if (!imported) {
+        return;
+      }
+
+      const [loadedExercises, recentWorkouts, loadedWorkoutFocuses, loadedExerciseMarkers, loadedTemplates] =
+        await Promise.all([
+          gymLogsApi.getExercises(),
+          gymLogsApi.getRecentWorkouts(),
+          gymLogsApi.getWorkoutFocuses(),
+          gymLogsApi.getExerciseMarkers(),
+          gymLogsApi.getWorkoutTemplates(),
+        ]);
+
+      clearActiveWorkout();
+      await removeWorkoutDraft();
+      setExercises(sortExercises(loadedExercises));
+      setWorkoutTags(sortWorkoutTags(loadedWorkoutFocuses));
+      setExerciseTags(sortExerciseTags(loadedExerciseMarkers));
+      setWorkoutTemplates(loadedTemplates);
+      setHistory(recentWorkouts.map(mapWorkoutToHistory));
+      setSelectedDataExercise(null);
+      setSelectedDataExerciseTag(null);
+      setSelectedDataWorkoutTag(null);
+      setExerciseRecords([]);
+      setDataExerciseTagExercises([]);
+      setDataWorkoutTagWorkouts([]);
+      setNotice({ tone: 'success', message: 'Database backup imported.' });
+    } catch (error) {
+      setNotice({
+        tone: 'error',
+        message: `Could not import database. ${getErrorMessage(error)}`,
+      });
+    } finally {
+      setIsTransferringDatabase(false);
+    }
+  };
+
+  const confirmImportBackup = () => {
+    Alert.alert(
+      'Replace local data?',
+      'Importing a backup replaces all current SweatLogs data on this phone. Export your current database first if you may need it later.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Choose backup',
+          style: 'destructive',
+          onPress: () => { void importBackup(); },
+        },
+      ],
+    );
+  };
+
   const confirmCancelWorkout = () => {
     Alert.alert(
       'Cancel workout?',
@@ -1385,6 +1469,7 @@ function SweatLogsApp() {
                   isCreatingExerciseTag={isCreatingExerciseTag}
                   isCreatingWorkoutTag={isCreatingWorkoutTag}
                   isLoading={isLoading}
+                  isTransferringDatabase={isTransferringDatabase}
                   newExerciseName={newExerciseName}
                   newExerciseSetType={newExerciseSetType}
                   newExerciseTagColor={newExerciseTagColor}
@@ -1409,6 +1494,8 @@ function SweatLogsApp() {
                   onOpenExerciseDialog={openSettingsExerciseDialog}
                   onOpenExerciseTagDialog={openSettingsExerciseTagDialog}
                   onOpenWorkoutTagDialog={openSettingsWorkoutTagDialog}
+                  onExportDatabase={() => { void exportBackup(); }}
+                  onImportDatabase={confirmImportBackup}
                 />
               </ScrollView>
             )}

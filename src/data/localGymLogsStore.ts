@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { File } from 'expo-file-system';
 import { ExerciseSetType } from '../types';
 import {
   CreateWorkoutRequest,
@@ -107,7 +108,75 @@ export const localGymLogsStore = {
   deleteExerciseTag,
   deleteWorkout,
   deleteWorkoutTemplate,
+  exportDatabase,
+  importDatabase,
 };
+
+async function exportDatabase() {
+  const db = await getDatabase();
+  return db.serializeAsync();
+}
+
+async function importDatabase(serializedDatabase: Uint8Array) {
+  const importedDb = await SQLite.deserializeDatabaseAsync(serializedDatabase);
+
+  try {
+    const integrity = await importedDb.getFirstAsync<{ integrity_check: string }>(
+      'PRAGMA integrity_check;',
+    );
+    if (integrity?.integrity_check !== 'ok') {
+      throw new Error('The selected file is not a valid SQLite database.');
+    }
+
+    const requiredTables = [
+      'app_metadata',
+      'exercises',
+      'workout_focuses',
+      'exercise_markers',
+      'workouts',
+      'workout_exercises',
+      'workout_sets',
+      'workout_workout_focuses',
+      'workout_exercise_exercise_markers',
+      'workout_templates',
+      'workout_template_exercises',
+      'workout_template_workout_focuses',
+    ];
+    const tables = await importedDb.getAllAsync<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table';",
+    );
+    const tableNames = new Set(tables.map((table) => table.name));
+    if (requiredTables.some((table) => !tableNames.has(table))) {
+      throw new Error('The selected database is not a SweatLogs backup.');
+    }
+
+    const foreignKeyErrors = await importedDb.getAllAsync('PRAGMA foreign_key_check;');
+    if (foreignKeyErrors.length > 0) {
+      throw new Error('The selected backup contains invalid linked records.');
+    }
+  } finally {
+    await importedDb.closeAsync();
+  }
+
+  const currentDb = await getDatabase();
+  const currentDatabase = await currentDb.serializeAsync();
+  await currentDb.closeAsync();
+  databasePromise = null;
+
+  const databaseFile = new File(SQLite.defaultDatabaseDirectory, databaseName);
+
+  try {
+    databaseFile.create({ overwrite: true, intermediates: true });
+    databaseFile.write(serializedDatabase);
+    await getDatabase();
+  } catch (error) {
+    databasePromise = null;
+    databaseFile.create({ overwrite: true, intermediates: true });
+    databaseFile.write(currentDatabase);
+    await getDatabase();
+    throw error;
+  }
+}
 
 async function getDatabase() {
   if (!databasePromise) {

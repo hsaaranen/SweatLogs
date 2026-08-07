@@ -34,6 +34,7 @@ type SettingsViewProps = {
   isCreatingExerciseTag: boolean;
   isCreatingWorkoutTag: boolean;
   isLoading: boolean;
+  isTransferringDatabase: boolean;
   newExerciseName: string;
   newExerciseSetType: ExerciseSetType;
   newExerciseTagColor: string;
@@ -59,6 +60,8 @@ type SettingsViewProps = {
   onOpenExerciseDialog: () => void;
   onOpenExerciseTagDialog: () => void;
   onOpenWorkoutTagDialog: () => void;
+  onExportDatabase: () => void;
+  onImportDatabase: () => void;
 };
 
 export function SettingsView({
@@ -74,6 +77,7 @@ export function SettingsView({
   isCreatingExerciseTag,
   isCreatingWorkoutTag,
   isLoading,
+  isTransferringDatabase,
   newExerciseName,
   newExerciseSetType,
   newExerciseTagColor,
@@ -99,9 +103,39 @@ export function SettingsView({
   onOpenExerciseDialog,
   onOpenExerciseTagDialog,
   onOpenWorkoutTagDialog,
+  onExportDatabase,
+  onImportDatabase,
 }: SettingsViewProps) {
   return (
     <>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Data backup</Text>
+        <Text style={styles.databaseBackupDescription}>
+          Export all workouts, exercises, markers, focuses, and templates to a file, or restore them
+          from a previous SweatLogs backup.
+        </Text>
+        <View style={styles.databaseBackupActions}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isTransferringDatabase}
+            onPress={onExportDatabase}
+            style={[styles.databaseBackupButton, isTransferringDatabase && styles.actionButtonDisabled]}
+          >
+            <Ionicons color="#215F9A" name="share-outline" size={20} />
+            <Text style={styles.databaseBackupButtonText}>Export backup</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isTransferringDatabase}
+            onPress={onImportDatabase}
+            style={[styles.databaseBackupButton, isTransferringDatabase && styles.actionButtonDisabled]}
+          >
+            <Ionicons color="#215F9A" name="download-outline" size={20} />
+            <Text style={styles.databaseBackupButtonText}>Import backup</Text>
+          </Pressable>
+        </View>
+      </View>
+
       <View style={styles.section}>
         <View style={styles.exercisePickerHeaderRow}>
           <Text style={styles.sectionTitle}>Create exercise</Text>

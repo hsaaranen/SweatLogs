@@ -8,6 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: isDevelopment ? "SweatLogs Dev" : "SweatLogs",
     slug: "sweatlogs",
     scheme: isDevelopment ? "sweatlogs-dev" : "sweatlogs",
+    plugins: [...(config.plugins ?? []), "expo-sharing"],
     android: {
       ...config.android,
       package: isDevelopment ? "com.sweatlogs.app.dev" : "com.sweatlogs.app",
