@@ -1,6 +1,11 @@
 import * as SQLite from 'expo-sqlite';
-import { File } from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import { ExerciseSetType } from '../types';
+import {
+  getDatabaseSchemaVersion,
+  migrateDatabase,
+  supportedSchemaVersion,
+} from './databaseMigrations';
 import {
   CreateWorkoutRequest,
   ExerciseRecordResponse,
@@ -71,6 +76,33 @@ type WorkoutTemplateExerciseRow = {
 
 type CountRow = { count: number };
 type MetadataRow = { value: string };
+type TableRow = { name: string };
+type TableInfoRow = {
+  cid: number;
+  name: string;
+  type: string;
+  notnull: number;
+  dflt_value: string | null;
+  pk: number;
+};
+type ForeignKeyRow = {
+  id: number;
+  seq: number;
+  table: string;
+  from: string;
+  to: string;
+  on_update: string;
+  on_delete: string;
+  match: string;
+};
+type IndexListRow = {
+  name: string;
+  unique: number;
+  origin: string;
+  partial: number;
+};
+type IndexInfoRow = { seqno: number; cid: number; name: string | null };
+type SchemaObjectRow = { type: string; name: string; tbl_name: string; sql: string };
 
 const databaseName = 'sweatlogs.db';
 const seedVersionKey = 'starterSeedVersion';
@@ -119,41 +151,15 @@ async function exportDatabase() {
 
 async function importDatabase(serializedDatabase: Uint8Array) {
   const importedDb = await SQLite.deserializeDatabaseAsync(serializedDatabase);
+  let migratedDatabase: Uint8Array;
 
   try {
-    const integrity = await importedDb.getFirstAsync<{ integrity_check: string }>(
-      'PRAGMA integrity_check;',
-    );
-    if (integrity?.integrity_check !== 'ok') {
-      throw new Error('The selected file is not a valid SQLite database.');
-    }
-
-    const requiredTables = [
-      'app_metadata',
-      'exercises',
-      'workout_focuses',
-      'exercise_markers',
-      'workouts',
-      'workout_exercises',
-      'workout_sets',
-      'workout_workout_focuses',
-      'workout_exercise_exercise_markers',
-      'workout_templates',
-      'workout_template_exercises',
-      'workout_template_workout_focuses',
-    ];
-    const tables = await importedDb.getAllAsync<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type = 'table';",
-    );
-    const tableNames = new Set(tables.map((table) => table.name));
-    if (requiredTables.some((table) => !tableNames.has(table))) {
-      throw new Error('The selected database is not a SweatLogs backup.');
-    }
-
-    const foreignKeyErrors = await importedDb.getAllAsync('PRAGMA foreign_key_check;');
-    if (foreignKeyErrors.length > 0) {
-      throw new Error('The selected backup contains invalid linked records.');
-    }
+    await validateDatabaseIntegrity(importedDb);
+    await validateSweatLogsIdentity(importedDb);
+    await migrateDatabase(importedDb);
+    await validateCurrentSchema(importedDb);
+    await validateDatabaseIntegrity(importedDb);
+    migratedDatabase = await importedDb.serializeAsync();
   } finally {
     await importedDb.closeAsync();
   }
@@ -167,7 +173,7 @@ async function importDatabase(serializedDatabase: Uint8Array) {
 
   try {
     databaseFile.create({ overwrite: true, intermediates: true });
-    databaseFile.write(serializedDatabase);
+    databaseFile.write(migratedDatabase);
     await getDatabase();
   } catch (error) {
     databasePromise = null;
@@ -178,9 +184,175 @@ async function importDatabase(serializedDatabase: Uint8Array) {
   }
 }
 
+async function validateDatabaseIntegrity(db: SQLiteDatabase) {
+  const integrity = await db.getFirstAsync<{ integrity_check: string }>('PRAGMA integrity_check;');
+  if (integrity?.integrity_check !== 'ok') {
+    throw new Error('The selected file is not a valid SQLite database.');
+  }
+
+  const foreignKeyErrors = await db.getAllAsync('PRAGMA foreign_key_check;');
+  if (foreignKeyErrors.length > 0) {
+    throw new Error('The selected backup contains invalid linked records.');
+  }
+}
+
+async function validateSweatLogsIdentity(db: SQLiteDatabase) {
+  const tables = await db.getAllAsync<TableRow>(
+    "SELECT name FROM sqlite_master WHERE type = 'table';",
+  );
+  const tableNames = new Set(tables.map((table) => table.name));
+  const identityTables = ['app_metadata', 'exercises', 'workouts'];
+
+  if (identityTables.some((table) => !tableNames.has(table))) {
+    throw new Error('The selected database is not a SweatLogs backup.');
+  }
+
+  const version = await getDatabaseSchemaVersion(db);
+  if (!Number.isInteger(version) || version < 0) {
+    throw new Error('The selected backup has an invalid database schema version.');
+  }
+  if (version > supportedSchemaVersion) {
+    throw new Error(
+      `This backup uses database schema v${version}, but this version of SweatLogs supports up to v${supportedSchemaVersion}. Update SweatLogs before importing it.`,
+    );
+  }
+}
+
+async function validateCurrentSchema(db: SQLiteDatabase) {
+  const version = await getDatabaseSchemaVersion(db);
+  if (version !== supportedSchemaVersion) {
+    throw new Error(`The backup could not be upgraded to database schema v${supportedSchemaVersion}.`);
+  }
+
+  const [actualSchema, expectedSchema] = await Promise.all([
+    inspectDatabaseSchema(db),
+    getExpectedSchema(),
+  ]);
+  if (actualSchema !== expectedSchema) {
+    throw new Error(
+      `The backup schema does not match SweatLogs database schema v${supportedSchemaVersion}.`,
+    );
+  }
+}
+
+let expectedSchemaPromise: Promise<string> | null = null;
+
+function getExpectedSchema() {
+  if (!expectedSchemaPromise) {
+    expectedSchemaPromise = createExpectedSchema().catch((error) => {
+      expectedSchemaPromise = null;
+      throw error;
+    });
+  }
+  return expectedSchemaPromise;
+}
+
+async function createExpectedSchema() {
+  const temporaryName = `sweatlogs-schema-${Date.now()}-${Math.random().toString(36).slice(2)}.db`;
+  const db = await SQLite.openDatabaseAsync(temporaryName, undefined, Paths.cache.uri);
+
+  try {
+    await db.execAsync('PRAGMA foreign_keys = ON;');
+    await migrateDatabase(db);
+    return await inspectDatabaseSchema(db);
+  } finally {
+    try {
+      await db.closeAsync();
+    } finally {
+      await SQLite.deleteDatabaseAsync(temporaryName, Paths.cache.uri);
+    }
+  }
+}
+
+async function inspectDatabaseSchema(db: SQLiteDatabase) {
+  const tables = await db.getAllAsync<TableRow>(
+    "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name;",
+  );
+  const inspectedTables = [];
+
+  for (const { name } of tables) {
+    const identifier = quoteSqlIdentifier(name);
+    const columns = await db.getAllAsync<TableInfoRow>(`PRAGMA table_info(${identifier});`);
+    const foreignKeys = await db.getAllAsync<ForeignKeyRow>(`PRAGMA foreign_key_list(${identifier});`);
+    const indexRows = await db.getAllAsync<IndexListRow>(`PRAGMA index_list(${identifier});`);
+    const indexes = [];
+
+    for (const index of indexRows.sort((left, right) => left.name.localeCompare(right.name))) {
+      const indexColumns = await db.getAllAsync<IndexInfoRow>(
+        `PRAGMA index_info(${quoteSqlIdentifier(index.name)});`,
+      );
+      indexes.push({
+        name: index.name,
+        unique: index.unique,
+        origin: index.origin,
+        partial: index.partial,
+        columns: indexColumns
+          .sort((left, right) => left.seqno - right.seqno)
+          .map(({ cid, name: columnName }) => ({ cid, name: columnName })),
+      });
+    }
+
+    inspectedTables.push({
+      name,
+      columns: columns
+        .sort((left, right) => left.cid - right.cid)
+        .map(({ name: columnName, type, notnull, dflt_value, pk }) => ({
+          name: columnName,
+          type: type.toUpperCase(),
+          notnull,
+          defaultValue: dflt_value,
+          primaryKeyOrder: pk,
+        })),
+      foreignKeys: foreignKeys
+        .sort((left, right) => left.id - right.id || left.seq - right.seq)
+        .map(({ id, seq, table, from, to, on_update, on_delete, match }) => ({
+          id,
+          seq,
+          table,
+          from,
+          to,
+          onUpdate: on_update,
+          onDelete: on_delete,
+          match,
+        })),
+      indexes,
+    });
+  }
+
+  const otherObjects = await db.getAllAsync<SchemaObjectRow>(`
+    SELECT type, name, tbl_name, sql
+    FROM sqlite_schema
+    WHERE type IN ('index', 'view', 'trigger')
+      AND name NOT LIKE 'sqlite_%'
+      AND sql IS NOT NULL
+    ORDER BY type, name;
+  `);
+
+  return JSON.stringify({
+    tables: inspectedTables,
+    objects: otherObjects.map(({ type, name, tbl_name, sql }) => ({
+      type,
+      name,
+      table: tbl_name,
+      sql: normalizeSql(sql),
+    })),
+  });
+}
+
+function quoteSqlIdentifier(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
+function normalizeSql(value: string) {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
 async function getDatabase() {
   if (!databasePromise) {
-    databasePromise = openAndInitializeDatabase();
+    databasePromise = openAndInitializeDatabase().catch((error) => {
+      databasePromise = null;
+      throw error;
+    });
   }
 
   return databasePromise;
@@ -188,113 +360,16 @@ async function getDatabase() {
 
 async function openAndInitializeDatabase() {
   const db = await SQLite.openDatabaseAsync(databaseName);
-  await db.execAsync('PRAGMA foreign_keys = ON;');
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS app_metadata (
-      key TEXT PRIMARY KEY NOT NULL,
-      value TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS exercises (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      setType TEXT NOT NULL,
-      createdAt TEXT NOT NULL,
-      archivedAt TEXT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_focuses (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      color TEXT NOT NULL,
-      archivedAt TEXT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS exercise_markers (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      color TEXT NOT NULL,
-      archivedAt TEXT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS workouts (
-      id TEXT PRIMARY KEY NOT NULL,
-      notes TEXT NOT NULL,
-      startedAt TEXT NOT NULL,
-      completedAt TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_exercises (
-      id TEXT PRIMARY KEY NOT NULL,
-      workoutId TEXT NOT NULL,
-      exerciseId TEXT NOT NULL,
-      setType TEXT NOT NULL,
-      sortOrder INTEGER NOT NULL,
-      FOREIGN KEY (workoutId) REFERENCES workouts(id) ON DELETE CASCADE,
-      FOREIGN KEY (exerciseId) REFERENCES exercises(id) ON DELETE RESTRICT
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_sets (
-      id TEXT PRIMARY KEY NOT NULL,
-      workoutExerciseId TEXT NOT NULL,
-      setNumber INTEGER NOT NULL,
-      reps INTEGER NULL,
-      weight REAL NULL,
-      durationSeconds INTEGER NULL,
-      distanceMeters REAL NULL,
-      FOREIGN KEY (workoutExerciseId) REFERENCES workout_exercises(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_workout_focuses (
-      workoutId TEXT NOT NULL,
-      workoutFocusId TEXT NOT NULL,
-      PRIMARY KEY (workoutId, workoutFocusId),
-      FOREIGN KEY (workoutId) REFERENCES workouts(id) ON DELETE CASCADE,
-      FOREIGN KEY (workoutFocusId) REFERENCES workout_focuses(id) ON DELETE RESTRICT
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_exercise_exercise_markers (
-      workoutExerciseId TEXT NOT NULL,
-      exerciseMarkerId TEXT NOT NULL,
-      PRIMARY KEY (workoutExerciseId, exerciseMarkerId),
-      FOREIGN KEY (workoutExerciseId) REFERENCES workout_exercises(id) ON DELETE CASCADE,
-      FOREIGN KEY (exerciseMarkerId) REFERENCES exercise_markers(id) ON DELETE RESTRICT
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_templates (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      createdAt TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_template_workout_focuses (
-      workoutTemplateId TEXT NOT NULL,
-      workoutFocusId TEXT NOT NULL,
-      PRIMARY KEY (workoutTemplateId, workoutFocusId),
-      FOREIGN KEY (workoutTemplateId) REFERENCES workout_templates(id) ON DELETE CASCADE,
-      FOREIGN KEY (workoutFocusId) REFERENCES workout_focuses(id) ON DELETE RESTRICT
-    );
-
-    CREATE TABLE IF NOT EXISTS workout_template_exercises (
-      id TEXT PRIMARY KEY NOT NULL,
-      workoutTemplateId TEXT NOT NULL,
-      exerciseId TEXT NOT NULL,
-      sortOrder INTEGER NOT NULL,
-      setCount INTEGER NOT NULL,
-      FOREIGN KEY (workoutTemplateId) REFERENCES workout_templates(id) ON DELETE CASCADE,
-      FOREIGN KEY (exerciseId) REFERENCES exercises(id) ON DELETE RESTRICT
-    );
-
-    CREATE INDEX IF NOT EXISTS ix_exercises_active_name ON exercises(name, archivedAt);
-    CREATE INDEX IF NOT EXISTS ix_workout_focuses_active_name ON workout_focuses(name, archivedAt);
-    CREATE INDEX IF NOT EXISTS ix_exercise_markers_active_name ON exercise_markers(name, archivedAt);
-    CREATE INDEX IF NOT EXISTS ix_workouts_completed_at ON workouts(completedAt);
-    CREATE INDEX IF NOT EXISTS ix_workout_exercises_workout_sort ON workout_exercises(workoutId, sortOrder);
-    CREATE INDEX IF NOT EXISTS ix_workout_sets_exercise_set ON workout_sets(workoutExerciseId, setNumber);
-    CREATE INDEX IF NOT EXISTS ix_workout_templates_name ON workout_templates(name);
-  `);
-  await seedStarterDataIfNeeded(db);
-  return db;
+  try {
+    await db.execAsync('PRAGMA foreign_keys = ON;');
+    await migrateDatabase(db);
+    await validateCurrentSchema(db);
+    await seedStarterDataIfNeeded(db);
+    return db;
+  } catch (error) {
+    await db.closeAsync();
+    throw error;
+  }
 }
 
 async function seedStarterDataIfNeeded(db: SQLiteDatabase) {
