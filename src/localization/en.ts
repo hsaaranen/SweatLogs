@@ -96,6 +96,9 @@ export const en = {
     nonnegativeWeight: 'Weight must be zero or more for {name}.', positiveDistance: 'Distance must be a positive number of kilometers for {name}.',
     wholeTime: 'Time must use whole minutes and seconds for {name}.', secondsRange: 'Seconds must be between 0 and 59 for {name}.', positiveTime: 'Time must be greater than zero for {name}.',
   },
+  metrics: {
+    reps: '{count} reps', minutesSeconds: '{minutes} min {seconds} sec', minutes: '{count} min', seconds: '{count} sec',
+  },
 } as const;
 
 type WidenStrings<T> = { [K in keyof T]: T[K] extends string ? string : WidenStrings<T[K]> };

@@ -91,4 +91,7 @@ export const fi: TranslationTable = {
     nonnegativeWeight: 'Painon on oltava vähintään nolla liikkeelle {name}.', positiveDistance: 'Matkan on oltava positiivinen kilometrimäärä liikkeelle {name}.',
     wholeTime: 'Ajan minuuttien ja sekuntien on oltava kokonaislukuja liikkeelle {name}.', secondsRange: 'Sekuntien on oltava 0–59 liikkeelle {name}.', positiveTime: 'Ajan on oltava suurempi kuin nolla liikkeelle {name}.',
   },
+  metrics: {
+    reps: '{count} toistoa', minutesSeconds: '{minutes} min {seconds} s', minutes: '{count} min', seconds: '{count} s',
+  },
 };

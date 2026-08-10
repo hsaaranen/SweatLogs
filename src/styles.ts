@@ -26,14 +26,21 @@ export const styles = StyleSheet.create({
   },
   splashScreen: {
     alignItems: 'center',
-    backgroundColor: '#111522',
+    backgroundColor: '#2864A7',
     flex: 1,
     justifyContent: 'center',
   },
   splashTitle: {
-    color: '#5AA7FF',
-    fontSize: 42,
+    bottom: 44,
+    color: '#F4F6FA',
+    fontSize: 28,
     fontWeight: '800',
+    letterSpacing: 0.5,
+    position: 'absolute',
+  },
+  splashIcon: {
+    height: 210,
+    width: 210,
   },
   notice: {
     backgroundColor: '#21314A',

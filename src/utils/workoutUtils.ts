@@ -240,7 +240,7 @@ export function formatSetMetrics(set: WorkoutSetHistory | ExerciseRecordSet) {
   const metrics: string[] = [];
 
   if (set.reps !== null) {
-    metrics.push(`${set.reps} reps`);
+    metrics.push(t('metrics.reps', { count: set.reps }));
   }
 
   if (set.weight !== null) {
@@ -426,14 +426,14 @@ function formatDurationSeconds(totalSeconds: number) {
   const seconds = roundedSeconds % 60;
 
   if (minutes > 0 && seconds > 0) {
-    return `${minutes} min ${seconds} sec`;
+    return t('metrics.minutesSeconds', { minutes, seconds });
   }
 
   if (minutes > 0) {
-    return `${minutes} min`;
+    return t('metrics.minutes', { count: minutes });
   }
 
-  return `${seconds} sec`;
+  return t('metrics.seconds', { count: seconds });
 }
 
 function formatDistanceMeters(distanceMeters: number) {

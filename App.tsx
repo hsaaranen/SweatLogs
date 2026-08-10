@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Animated, ScrollView, Text, View } from 'react-native';
+import { Alert, Animated, Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { gymLogsApi } from './src/api/gymLogsApi';
 import { styles } from './src/styles';
@@ -77,7 +77,7 @@ const navigationTheme = {
 };
 const DEFAULT_NEW_WORKOUT_TAG_COLOR = '#5AA7FF';
 const DEFAULT_NEW_EXERCISE_TAG_COLOR = '#9BA1AD';
-const MIN_SPLASH_DURATION_MS = 1100;
+const MIN_SPLASH_DURATION_MS = 3000;
 
 export default function App() {
   return <SweatLogsApp />;
@@ -1267,6 +1267,12 @@ function SweatLogsApp() {
       <SafeAreaProvider>
         <SafeAreaView edges={['top', 'right', 'bottom', 'left']} style={styles.splashScreen}>
           <StatusBar style="light" />
+          <Image
+            accessibilityLabel={t('appName')}
+            resizeMode="contain"
+            source={require('./assets/android-icon-monochrome.png')}
+            style={styles.splashIcon}
+          />
           <Text style={styles.splashTitle}>{t('appName')}</Text>
         </SafeAreaView>
       </SafeAreaProvider>
