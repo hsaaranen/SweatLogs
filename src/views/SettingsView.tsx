@@ -119,7 +119,6 @@ export function SettingsView({
         <Text style={styles.databaseBackupDescription}>{t('settings.languageDescription')}</Text>
         <View style={styles.languageOptionRow}>
           {([
-            ['device', t('settings.deviceLanguage')],
             ['en', t('settings.english')],
             ['fi', t('settings.finnish')],
           ] as const).map(([value, label]) => {

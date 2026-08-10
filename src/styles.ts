@@ -665,6 +665,13 @@ export const styles = StyleSheet.create({
     minHeight: 36,
     width: 36,
   },
+  workoutExerciseDataButton: {
+    alignItems: 'center',
+    borderRadius: 8,
+    justifyContent: 'center',
+    minHeight: 36,
+    width: 36,
+  },
   setRow: {
     alignItems: 'center',
     flexDirection: 'row',

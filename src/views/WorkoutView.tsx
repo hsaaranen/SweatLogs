@@ -46,6 +46,7 @@ type WorkoutViewProps = {
   onSaveWorkout: () => void;
   onCancelWorkout: () => void;
   onOpenExerciseDialog: () => void;
+  onOpenExerciseData: (exerciseId: string) => void;
   onToggleExerciseTag: (workoutExerciseId: string, tagId: string) => void;
   onToggleWorkoutExercise: (workoutExerciseId: string) => void;
   onToggleWorkoutTag: (tagId: string) => void;
@@ -94,6 +95,7 @@ export function WorkoutView({
   onSaveWorkout,
   onCancelWorkout,
   onOpenExerciseDialog,
+  onOpenExerciseData,
   onToggleExerciseTag,
   onToggleWorkoutExercise,
   onToggleWorkoutTag,
@@ -199,6 +201,15 @@ export function WorkoutView({
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={22}
                   />
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={t('actions.viewExerciseData', { name: entry.exerciseName })}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => onOpenExerciseData(entry.exerciseId)}
+                  style={styles.workoutExerciseDataButton}
+                >
+                  <Ionicons color="#215F9A" name="stats-chart-outline" size={20} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel={t('actions.removeFromWorkout', { name: entry.exerciseName })}

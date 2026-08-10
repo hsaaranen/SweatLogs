@@ -2,22 +2,14 @@ import { en, TranslationTable } from './en';
 import { fi } from './fi';
 
 export type SupportedLocale = 'en' | 'fi';
-export type LanguagePreference = 'device' | SupportedLocale;
+export type LanguagePreference = SupportedLocale;
 type Leaf = string | { readonly [key: string]: Leaf };
 type Parameters = Record<string, string | number>;
 
 const tables: Record<SupportedLocale, TranslationTable> = { en, fi };
 
-function detectLocale(): SupportedLocale {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().locale.toLowerCase().startsWith('fi') ? 'fi' : 'en';
-  } catch {
-    return 'en';
-  }
-}
-
-let languagePreference: LanguagePreference = 'device';
-export let locale: SupportedLocale = detectLocale();
+let languagePreference: LanguagePreference = 'en';
+export let locale: SupportedLocale = 'en';
 
 export function getLanguagePreference() {
   return languagePreference;
@@ -25,7 +17,7 @@ export function getLanguagePreference() {
 
 export function setLanguagePreference(preference: LanguagePreference) {
   languagePreference = preference;
-  locale = preference === 'device' ? detectLocale() : preference;
+  locale = preference;
 }
 
 export function t(path: string, parameters: Parameters = {}): string {

@@ -25,9 +25,9 @@ export const fi: TranslationTable = {
     noTemplates: 'Treenipohjia ei ole vielä.', clearFocus: 'Tyhjennä painotus',
   },
   settings: {
-    language: 'Kieli', languageDescription: 'Valitse SweatLogsin käyttämä kieli.', deviceLanguage: 'Käytä laitteen kieltä', english: 'Englanti', finnish: 'Suomi',
-    dataBackup: 'Tietojen varmuuskopio', backupDescription: 'Vie koko tietokannan varmuuskopio tai korvaa paikalliset tiedot aiemmalla varmuuskopiolla.',
-    exportBackup: 'Vie varmuuskopio', importBackup: 'Tuo varmuuskopio', createExercise: 'Luo liike', name: 'Nimi',
+    language: 'Kieli', languageDescription: 'Valitse SweatLogsin käyttämä kieli.', english: 'Englanti', finnish: 'Suomi',
+    dataBackup: 'Tietojen varmuuskopiointi', backupDescription: 'Luo harjoitustietokannasta varmuuskopio tai korvaa nykyisettiedot aijemmalla varmuuskopiolla.',
+    exportBackup: 'Luo varmuuskopio', importBackup: 'Avaa varmuuskopio', createExercise: 'Luo liike', name: 'Nimi',
     newExercise: 'Uusi liike', type: 'Tyyppi', createFocus: 'Luo treenin painotus', newFocus: 'Uusi treenin painotus',
     createMarker: 'Luo liikemerkintä', newMarker: 'Uusi liikemerkintä', exerciseLibrary: 'Liikekirjasto',
     loadingExercises: 'Ladataan liikkeitä...', noExercises: 'Liikkeitä ei ole vielä.', workoutFocus: 'Treenin painotus',
@@ -65,6 +65,7 @@ export const fi: TranslationTable = {
     delete: 'Poista {name}', edit: 'Muokkaa {name}', expand: 'Laajenna {name}', collapse: 'Pienennä {name}', remove: 'Poista {name}',
     add: 'Lisää {name}', removeFromWorkout: 'Poista {name} treenistä', chooseMarkers: 'Valitse merkinnät liikkeelle {name}',
     removeSet: 'Poista sarja liikkeestä {name}', addSet: 'Lisää sarja liikkeeseen {name}',
+    viewExerciseData: 'Näytä liikkeen {name} tiedot',
   },
   messages: {
     genericError: 'Jokin meni vikaan.', templateDeleted: 'Treenipohja poistettu.', workoutSaved: 'Treeni tallennettu.',

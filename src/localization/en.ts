@@ -23,7 +23,7 @@ export const en = {
     savedTemplates: 'Saved templates', noTemplates: 'No workout templates yet.', clearFocus: 'Clear focus',
   },
   settings: {
-    language: 'Language', languageDescription: 'Choose the language used by SweatLogs.', deviceLanguage: 'Use device language', english: 'English', finnish: 'Finnish',
+    language: 'Language', languageDescription: 'Choose the language used by SweatLogs.', english: 'English', finnish: 'Finnish',
     dataBackup: 'Data backup', backupDescription: 'Export a complete database backup or replace local data from a previous backup.',
     exportBackup: 'Export backup', importBackup: 'Import backup', createExercise: 'Create exercise', name: 'Name',
     newExercise: 'New exercise', type: 'Type', createFocus: 'Create workout focus', newFocus: 'New workout focus',
@@ -69,6 +69,7 @@ export const en = {
     expand: 'Expand {name}', collapse: 'Collapse {name}', remove: 'Remove {name}', add: 'Add {name}',
     removeFromWorkout: 'Remove {name} from workout', chooseMarkers: 'Choose markers for {name}',
     removeSet: 'Remove set from {name}', addSet: 'Add set to {name}',
+    viewExerciseData: 'View data for {name}',
   },
   messages: {
     genericError: 'Something went wrong.', templateDeleted: 'Workout template deleted.', workoutSaved: 'Workout saved.',

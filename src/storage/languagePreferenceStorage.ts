@@ -6,14 +6,14 @@ const preferenceFileUri = FileSystem.documentDirectory
   : null;
 
 export async function loadLanguagePreference(): Promise<LanguagePreference> {
-  if (!preferenceFileUri) return 'device';
+  if (!preferenceFileUri) return 'en';
   const file = await FileSystem.getInfoAsync(preferenceFileUri);
-  if (!file.exists) return 'device';
+  if (!file.exists) return 'en';
   try {
     const value: unknown = JSON.parse(await FileSystem.readAsStringAsync(preferenceFileUri));
-    return value === 'en' || value === 'fi' || value === 'device' ? value : 'device';
+    return value === 'fi' ? 'fi' : 'en';
   } catch {
-    return 'device';
+    return 'en';
   }
 }
 

@@ -72,7 +72,7 @@ export default function App() {
 }
 
 function SweatLogsApp() {
-  const [languagePreference, setLanguagePreferenceState] = useState<LanguagePreference>('device');
+  const [languagePreference, setLanguagePreferenceState] = useState<LanguagePreference>('en');
   const [, setLanguageRevision] = useState(0);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseSearchText, setExerciseSearchText] = useState('');
@@ -1320,7 +1320,7 @@ function SweatLogsApp() {
           })}
         >
           <Tab.Screen name="Workout">
-            {() => (
+            {({ navigation }) => (
               <ScrollView contentContainerStyle={styles.content}>
                 <WorkoutView
                   exerciseSearchText={exerciseSearchText}
@@ -1352,6 +1352,13 @@ function SweatLogsApp() {
                   onSaveWorkout={saveWorkout}
                   onCancelWorkout={confirmCancelWorkout}
                   onOpenExerciseDialog={openExerciseDialog}
+                  onOpenExerciseData={(exerciseId) => {
+                    const exercise = exercises.find((item) => item.id === exerciseId);
+                    if (!exercise) return;
+                    setDataSearchMode('exercise');
+                    selectDataExercise(exercise);
+                    navigation.navigate('Data');
+                  }}
                   onToggleWorkoutExercise={toggleWorkoutExercise}
                   onUpdateSet={updateSet}
                   onLoadTemplate={loadWorkoutTemplate}
