@@ -196,7 +196,7 @@ export function DataView({
           hitSlop={8}
           onPress={() => beginEditingRecord(record)}
         >
-          <Ionicons color={isBusy ? '#9AA59E' : '#215F9A'} name="create-outline" size={20} />
+          <Ionicons color={isBusy ? '#6D7480' : '#5AA7FF'} name="create-outline" size={20} />
         </Pressable>
         <Pressable
           accessibilityLabel={t('actions.delete', { name: record.completedAt })}
@@ -205,7 +205,7 @@ export function DataView({
           hitSlop={8}
           onPress={() => onDeleteRecord(record.id)}
         >
-          <Ionicons color={isBusy ? '#9AA59E' : '#B4462E'} name="trash-outline" size={20} />
+          <Ionicons color={isBusy ? '#6D7480' : '#FF7B7B'} name="trash-outline" size={20} />
         </Pressable>
       </View>
     );
@@ -267,7 +267,7 @@ export function DataView({
               {renderRecordTags(record)}
               <Text style={styles.dataRecordDate}>{record.completedAt}</Text>
               <Ionicons
-                color="#215F9A"
+                color="#5AA7FF"
                 name={isExpanded ? 'chevron-up' : 'chevron-down'}
                 size={22}
               />
@@ -382,7 +382,7 @@ export function DataView({
                     <TagChip tag={selectedExerciseTag} />
                   </View>
                   <Ionicons
-                    color="#215F9A"
+                    color="#5AA7FF"
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={22}
                   />
@@ -453,7 +453,7 @@ export function DataView({
                   </View>
                   <Text style={styles.dataRecordDate}>{workout.completedAt}</Text>
                   <Ionicons
-                    color="#215F9A"
+                    color="#5AA7FF"
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={22}
                   />
@@ -691,7 +691,7 @@ function TagSearchPicker<TTag extends TagItem>({
           <TextInput
             onChangeText={onChangeSearch}
             placeholder={t('actions.searchItem', { item: pluralTitle })}
-            placeholderTextColor="#6F7A73"
+            placeholderTextColor="#9BA1AD"
             style={styles.exerciseSearchInput}
             value={searchText}
           />
@@ -741,13 +741,13 @@ function TagSearchPicker<TTag extends TagItem>({
                 onPress={onCloseDialog}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <TextInput
               onChangeText={onChangeSearch}
               placeholder={t('actions.searchItem', { item: pluralTitle })}
-              placeholderTextColor="#6F7A73"
+              placeholderTextColor="#9BA1AD"
               style={styles.exerciseSearchInput}
               value={searchText}
             />
@@ -802,7 +802,7 @@ function TagOption<TTag extends TagItem>({
     >
       <View style={[styles.workoutTagSwatch, { backgroundColor: tag.color }]} />
       <Text style={styles.workoutTagOptionText}>{tag.name}</Text>
-      {isSelected && <Ionicons color="#214E3A" name="checkmark" size={16} />}
+      {isSelected && <Ionicons color="#5AA7FF" name="checkmark" size={16} />}
     </Pressable>
   );
 }

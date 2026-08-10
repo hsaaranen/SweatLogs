@@ -18,7 +18,7 @@ import {
 } from '../types';
 import { formatDate, t } from '../localization';
 
-export const DEFAULT_WORKOUT_TAG_COLOR = '#9AA59E';
+export const DEFAULT_WORKOUT_TAG_COLOR = '#8B93A1';
 export const DEFAULT_EXERCISE_SET_TYPE: ExerciseSetType = 'Strength';
 export const MIN_WORKOUT_SETS = 1;
 export const MAX_WORKOUT_SETS = 15;

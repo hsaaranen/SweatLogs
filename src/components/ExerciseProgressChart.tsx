@@ -31,14 +31,14 @@ type MetricConfig = {
 };
 
 const SERIES_COLORS = [
-  '#215F9A',
-  '#D56A3A',
-  '#214E3A',
-  '#8E44AD',
-  '#B4462E',
-  '#2C7A7B',
-  '#B7791F',
-  '#4A5568',
+  '#5AA7FF',
+  '#C2410C',
+  '#0F766E',
+  '#7E22CE',
+  '#FF7B7B',
+  '#0E7490',
+  '#A16207',
+  '#B5BAC4',
 ];
 
 const CHART_HEIGHT = 240;
@@ -188,7 +188,7 @@ export function ExerciseProgressChart({
           {yTicks.map((tick) => (
             <G key={tick}>
               <Line
-                stroke="#DDE4DE"
+                stroke="#353B4A"
                 strokeWidth={1}
                 x1={PADDING.left}
                 x2={width - PADDING.right}
@@ -196,7 +196,7 @@ export function ExerciseProgressChart({
                 y2={y(tick)}
               />
               <SvgText
-                fill="#6F7A73"
+                fill="#9BA1AD"
                 fontSize={10}
                 textAnchor="end"
                 x={PADDING.left - 7}
@@ -207,7 +207,7 @@ export function ExerciseProgressChart({
             </G>
           ))}
           <Line
-            stroke="#8D9991"
+            stroke="#6D7480"
             strokeWidth={1}
             x1={PADDING.left}
             x2={PADDING.left}
@@ -215,7 +215,7 @@ export function ExerciseProgressChart({
             y2={CHART_HEIGHT - PADDING.bottom}
           />
           <Line
-            stroke="#8D9991"
+            stroke="#6D7480"
             strokeWidth={1}
             x1={PADDING.left}
             x2={width - PADDING.right}
@@ -225,7 +225,7 @@ export function ExerciseProgressChart({
           {xTicks.map((tick) => (
             <SvgText
               key={`${tick.timestamp}-${tick.label}`}
-              fill="#6F7A73"
+              fill="#9BA1AD"
               fontSize={10}
               textAnchor={tick.anchor}
               x={x(tick.timestamp)}
@@ -259,7 +259,7 @@ export function ExerciseProgressChart({
                     key={`${series.key}-point-${pointIndex}`}
                     cx={x(point.timestamp)}
                     cy={y(point.value)}
-                    fill="#FFFFFF"
+                    fill="#242936"
                     r={4}
                     stroke={series.color}
                     strokeWidth={2.5}

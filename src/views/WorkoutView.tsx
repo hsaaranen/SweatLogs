@@ -132,7 +132,7 @@ export function WorkoutView({
                   onPress={() => onLoadTemplate(template)}
                   style={styles.workoutTemplateButton}
                 >
-                  <Ionicons color="#215F9A" name="clipboard-outline" size={17} />
+                  <Ionicons color="#5AA7FF" name="clipboard-outline" size={17} />
                   <Text style={styles.workoutTemplateButtonText}>{template.name}</Text>
                 </Pressable>
               ))}
@@ -197,7 +197,7 @@ export function WorkoutView({
                     <Text style={styles.workoutExerciseTitle}>{entry.exerciseName}</Text>
                   </View>
                   <Ionicons
-                    color="#215F9A"
+                    color="#5AA7FF"
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={22}
                   />
@@ -209,7 +209,7 @@ export function WorkoutView({
                   onPress={() => onOpenExerciseData(entry.exerciseId)}
                   style={styles.workoutExerciseDataButton}
                 >
-                  <Ionicons color="#215F9A" name="stats-chart-outline" size={20} />
+                  <Ionicons color="#5AA7FF" name="stats-chart-outline" size={20} />
                 </Pressable>
                 <Pressable
                   accessibilityLabel={t('actions.removeFromWorkout', { name: entry.exerciseName })}
@@ -218,7 +218,7 @@ export function WorkoutView({
                   onPress={() => onRemoveExerciseFromWorkout(entry.id)}
                   style={styles.workoutExerciseDeleteButton}
                 >
-                  <Ionicons color="#B4462E" name="trash-outline" size={20} />
+                  <Ionicons color="#FF7B7B" name="trash-outline" size={20} />
                 </Pressable>
               </View>
 
@@ -281,7 +281,7 @@ export function WorkoutView({
                         ]}
                       >
                         <Ionicons
-                          color={hasMinimumSets ? '#9AA59E' : '#215F9A'}
+                          color={hasMinimumSets ? '#6D7480' : '#5AA7FF'}
                           name="remove"
                           size={20}
                         />
@@ -299,7 +299,7 @@ export function WorkoutView({
                         ]}
                       >
                         <Ionicons
-                          color={hasMaximumSets ? '#9AA59E' : '#215F9A'}
+                          color={hasMaximumSets ? '#6D7480' : '#5AA7FF'}
                           name="add"
                           size={20}
                         />
@@ -333,7 +333,7 @@ export function WorkoutView({
           multiline
           onChangeText={onChangeWorkoutNotes}
           placeholder={t('workout.notes')}
-          placeholderTextColor="#6F7A73"
+          placeholderTextColor="#9BA1AD"
           style={styles.workoutNotesInput}
           textAlignVertical="top"
           value={workoutNotes}
@@ -386,7 +386,7 @@ export function WorkoutView({
                 onPress={() => setIsWorkoutTagPickerOpen(false)}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <ScrollView
@@ -400,7 +400,7 @@ export function WorkoutView({
                   onPress={onClearWorkoutTags}
                   style={styles.workoutTagOption}
                 >
-                  <Ionicons color="#6F7A73" name="remove-circle-outline" size={18} />
+                  <Ionicons color="#9BA1AD" name="remove-circle-outline" size={18} />
                   <Text style={styles.workoutTagOptionText}>{t('workout.clearFocus')}</Text>
                 </Pressable>
               )}
@@ -423,7 +423,7 @@ export function WorkoutView({
                     >
                       <View style={[styles.workoutTagSwatch, { backgroundColor: tag.color }]} />
                       <Text style={styles.workoutTagOptionText}>{tag.name}</Text>
-                      {isSelected && <Ionicons color="#214E3A" name="checkmark" size={16} />}
+                      {isSelected && <Ionicons color="#5AA7FF" name="checkmark" size={16} />}
                     </Pressable>
                   );
                 })
@@ -452,7 +452,7 @@ export function WorkoutView({
                 onPress={() => setExerciseTagPickerWorkoutExerciseId(null)}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <ScrollView
@@ -466,7 +466,7 @@ export function WorkoutView({
                   onPress={() => onClearExerciseTags(selectedExerciseTagPickerEntry.id)}
                   style={styles.workoutTagOption}
                 >
-                  <Ionicons color="#6F7A73" name="remove-circle-outline" size={18} />
+                  <Ionicons color="#9BA1AD" name="remove-circle-outline" size={18} />
                   <Text style={styles.workoutTagOptionText}>{t('workout.clearMarkers')}</Text>
                 </Pressable>
               )}
@@ -493,7 +493,7 @@ export function WorkoutView({
                     >
                       <View style={[styles.workoutTagSwatch, { backgroundColor: tag.color }]} />
                       <Text style={styles.workoutTagOptionText}>{tag.name}</Text>
-                      {isSelected && <Ionicons color="#214E3A" name="checkmark" size={16} />}
+                      {isSelected && <Ionicons color="#5AA7FF" name="checkmark" size={16} />}
                     </Pressable>
                   );
                 })

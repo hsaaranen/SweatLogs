@@ -102,13 +102,13 @@ export function ExerciseSearchPicker({
                 onPress={onCloseDialog}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <TextInput
               onChangeText={onChangeSearch}
               placeholder={t('picker.searchExercises')}
-              placeholderTextColor="#6F7A73"
+              placeholderTextColor="#9BA1AD"
               style={styles.exerciseSearchInput}
               value={searchText}
             />

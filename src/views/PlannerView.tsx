@@ -133,7 +133,7 @@ export function PlannerView({
                   onPress={() => onUpdateSetCount(exercise.id, setCount - 1)}
                   style={styles.plannerSetCountButton}
                 >
-                  <Ionicons color="#215F9A" name="remove" size={18} />
+                  <Ionicons color="#5AA7FF" name="remove" size={18} />
                 </Pressable>
                 <Text style={styles.plannerSetCountText}>{setCount} {t('common.sets')}</Text>
                 <Pressable
@@ -141,11 +141,11 @@ export function PlannerView({
                   onPress={() => onUpdateSetCount(exercise.id, setCount + 1)}
                   style={styles.plannerSetCountButton}
                 >
-                  <Ionicons color="#215F9A" name="add" size={18} />
+                  <Ionicons color="#5AA7FF" name="add" size={18} />
                 </Pressable>
               </View>
               <Pressable onPress={() => onRemoveExercise(exercise.id)}>
-                <Ionicons color="#B4462E" name="close-circle-outline" size={22} />
+                <Ionicons color="#FF7B7B" name="close-circle-outline" size={22} />
               </Pressable>
             </View>
           ))}
@@ -207,7 +207,7 @@ export function PlannerView({
                       </Text>
                     </View>
                     <Ionicons
-                      color="#215F9A"
+                      color="#5AA7FF"
                       name={isExpanded ? 'chevron-up' : 'chevron-down'}
                       size={22}
                     />
@@ -218,13 +218,13 @@ export function PlannerView({
                       accessibilityRole="button"
                       onPress={() => onEdit(template)}
                     >
-                      <Ionicons color="#215F9A" name="create-outline" size={21} />
+                      <Ionicons color="#5AA7FF" name="create-outline" size={21} />
                     </Pressable>
                     <Pressable
                       disabled={deletingTemplateId === template.id}
                       onPress={() => onDelete(template)}
                     >
-                      <Ionicons color="#B4462E" name="trash-outline" size={20} />
+                      <Ionicons color="#FF7B7B" name="trash-outline" size={20} />
                     </Pressable>
                   </View>
                 </View>
@@ -274,7 +274,7 @@ export function PlannerView({
                 onPress={() => setIsTagPickerOpen(false)}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <ScrollView
@@ -287,7 +287,7 @@ export function PlannerView({
                   onPress={() => selectedTagIds.forEach(onToggleTag)}
                   style={styles.workoutTagOption}
                 >
-                  <Ionicons color="#6F7A73" name="remove-circle-outline" size={18} />
+                  <Ionicons color="#9BA1AD" name="remove-circle-outline" size={18} />
                   <Text style={styles.workoutTagOptionText}>{t('workout.clearFocus')}</Text>
                 </Pressable>
               )}
@@ -308,7 +308,7 @@ export function PlannerView({
                     >
                       <View style={[styles.workoutTagSwatch, { backgroundColor: tag.color }]} />
                       <Text style={styles.workoutTagOptionText}>{tag.name}</Text>
-                      {isSelected && <Ionicons color="#214E3A" name="checkmark" size={16} />}
+                      {isSelected && <Ionicons color="#5AA7FF" name="checkmark" size={16} />}
                     </Pressable>
                   );
                 })

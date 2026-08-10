@@ -255,7 +255,7 @@ export function CalendarView({
                     )}
                   </View>
                   <Ionicons
-                    color="#215F9A"
+                    color="#5AA7FF"
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={22}
                   />
@@ -271,7 +271,7 @@ export function CalendarView({
                     (isDeleting || deletingWorkoutId !== null) && styles.historyDeleteButtonDisabled,
                   ]}
                 >
-                  <Ionicons color="#B4462E" name="trash-outline" size={20} />
+                  <Ionicons color="#FF7B7B" name="trash-outline" size={20} />
                 </Pressable>
               </View>
 
@@ -310,7 +310,7 @@ export function CalendarView({
                               hitSlop={8}
                               onPress={() => beginEditingRecord(exercise)}
                             >
-                              <Ionicons color="#215F9A" name="create-outline" size={20} />
+                              <Ionicons color="#5AA7FF" name="create-outline" size={20} />
                             </Pressable>
                             <Pressable
                               accessibilityLabel={t('actions.delete', { name: exercise.exerciseName })}
@@ -319,7 +319,7 @@ export function CalendarView({
                               hitSlop={8}
                               onPress={() => onDeleteRecord(exercise.id)}
                             >
-                              <Ionicons color="#B4462E" name="trash-outline" size={20} />
+                              <Ionicons color="#FF7B7B" name="trash-outline" size={20} />
                             </Pressable>
                           </View>
                         </View>

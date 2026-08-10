@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, Animated, ScrollView, Text, View } from 'react-native';
@@ -63,8 +63,20 @@ type RootTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
-const DEFAULT_NEW_WORKOUT_TAG_COLOR = '#215F9A';
-const DEFAULT_NEW_EXERCISE_TAG_COLOR = '#214E3A';
+const navigationTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: '#5AA7FF',
+    background: '#111522',
+    card: '#111522',
+    text: '#F4F6FA',
+    border: '#353B4A',
+    notification: '#FF7B7B',
+  },
+};
+const DEFAULT_NEW_WORKOUT_TAG_COLOR = '#5AA7FF';
+const DEFAULT_NEW_EXERCISE_TAG_COLOR = '#9BA1AD';
 const MIN_SPLASH_DURATION_MS = 1100;
 
 export default function App() {
@@ -1254,7 +1266,7 @@ function SweatLogsApp() {
     return (
       <SafeAreaProvider>
         <SafeAreaView edges={['top', 'right', 'bottom', 'left']} style={styles.splashScreen}>
-          <StatusBar style="dark" />
+          <StatusBar style="light" />
           <Text style={styles.splashTitle}>{t('appName')}</Text>
         </SafeAreaView>
       </SafeAreaProvider>
@@ -1262,9 +1274,9 @@ function SweatLogsApp() {
   }
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer theme={navigationTheme}>
         <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
             <View style={styles.headerTitleBlock}>
@@ -1290,9 +1302,10 @@ function SweatLogsApp() {
         <Tab.Navigator
           screenOptions={({ route }) => ({
             headerShown: false,
+            sceneStyle: { backgroundColor: '#111522' },
             tabBarLabel: t(`tabs.${route.name.toLowerCase()}`),
-            tabBarActiveTintColor: '#214E3A',
-            tabBarInactiveTintColor: '#54635A',
+            tabBarActiveTintColor: '#5AA7FF',
+            tabBarInactiveTintColor: '#B5BAC4',
             tabBarIcon: ({ color, size }) => {
               const iconName =
                 route.name === 'Workout'
@@ -1311,11 +1324,11 @@ function SweatLogsApp() {
               fontWeight: '800',
             },
             tabBarStyle: {
-              backgroundColor: '#FFFFFF',
-              borderTopColor: '#E0E4DD',
-              minHeight: 60,
-              paddingBottom: 8,
-              paddingTop: 6,
+              backgroundColor: '#111522',
+              borderTopColor: '#353B4A',
+              minHeight: 70,
+              paddingBottom: 10,
+              paddingTop: 8,
             },
           })}
         >

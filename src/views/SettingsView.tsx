@@ -7,12 +7,18 @@ import { t } from '../localization';
 import type { LanguagePreference } from '../localization';
 
 const TAG_COLOR_OPTIONS = [
-  '#215F9A',
-  '#214E3A',
-  '#D56A3A',
-  '#B4462E',
-  '#8E44AD',
-  '#9AA59E',
+  '#5AA7FF',
+  '#35C2D1',
+  '#2EC4A6',
+  '#63C174',
+  '#B7D957',
+  '#F2C94C',
+  '#FF9F43',
+  '#FF6B6B',
+  '#F062B7',
+  '#B084F5',
+  '#C89B7B',
+  '#A7AFBD',
 ];
 
 type SettingsViewProps = {
@@ -132,7 +138,7 @@ export function SettingsView({
                 style={[styles.languageOption, isSelected && styles.exerciseSetTypeOptionSelected]}
               >
                 <Text style={[styles.languageOptionText, isSelected && styles.exerciseSetTypeOptionTextSelected]}>{label}</Text>
-                {isSelected && <Ionicons color="#214E3A" name="checkmark" size={15} />}
+                {isSelected && <Ionicons color="#5AA7FF" name="checkmark" size={15} />}
               </Pressable>
             );
           })}
@@ -150,7 +156,7 @@ export function SettingsView({
             onPress={onExportDatabase}
             style={[styles.databaseBackupButton, isTransferringDatabase && styles.actionButtonDisabled]}
           >
-            <Ionicons color="#215F9A" name="share-outline" size={20} />
+            <Ionicons color="#5AA7FF" name="share-outline" size={20} />
             <Text style={styles.databaseBackupButtonText}>{t('settings.exportBackup')}</Text>
           </Pressable>
           <Pressable
@@ -159,7 +165,7 @@ export function SettingsView({
             onPress={onImportDatabase}
             style={[styles.databaseBackupButton, isTransferringDatabase && styles.actionButtonDisabled]}
           >
-            <Ionicons color="#215F9A" name="download-outline" size={20} />
+            <Ionicons color="#5AA7FF" name="download-outline" size={20} />
             <Text style={styles.databaseBackupButtonText}>{t('settings.importBackup')}</Text>
           </Pressable>
         </View>
@@ -181,7 +187,7 @@ export function SettingsView({
           value={newExerciseName}
           onChangeText={onChangeNewExerciseName}
           placeholder={t('settings.newExercise')}
-          placeholderTextColor="#6F7A73"
+          placeholderTextColor="#9BA1AD"
           style={styles.exerciseInput}
         />
         <Text style={styles.exerciseCreatorControlLabel}>{t('settings.type')}</Text>
@@ -210,7 +216,7 @@ export function SettingsView({
                   >
                     {option.label}
                   </Text>
-                  {isSelected && <Ionicons color="#214E3A" name="checkmark-circle" size={18} />}
+                  {isSelected && <Ionicons color="#5AA7FF" name="checkmark-circle" size={18} />}
                 </View>
                 <View style={styles.exerciseSetTypePreview}>
                   <View
@@ -295,7 +301,7 @@ export function SettingsView({
             value={newWorkoutTagName}
             onChangeText={onChangeNewWorkoutTagName}
             placeholder={t('settings.newFocus')}
-            placeholderTextColor="#6F7A73"
+            placeholderTextColor="#9BA1AD"
             style={styles.exerciseInput}
           />
           <Pressable
@@ -345,7 +351,7 @@ export function SettingsView({
             value={newExerciseTagName}
             onChangeText={onChangeNewExerciseTagName}
             placeholder={t('settings.newMarker')}
-            placeholderTextColor="#6F7A73"
+            placeholderTextColor="#9BA1AD"
             style={styles.exerciseInput}
           />
           <Pressable
@@ -375,7 +381,7 @@ export function SettingsView({
                 onPress={onCloseExerciseDialog}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <ScrollView
@@ -408,7 +414,7 @@ export function SettingsView({
                         ]}
                       >
                         <Ionicons
-                          color={isDeleting ? '#9AA59E' : '#B4462E'}
+                          color={isDeleting ? '#6D7480' : '#FF7B7B'}
                           name="trash-outline"
                           size={20}
                         />
@@ -439,7 +445,7 @@ export function SettingsView({
                 onPress={onCloseWorkoutTagDialog}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <ScrollView
@@ -471,7 +477,7 @@ export function SettingsView({
                         ]}
                       >
                         <Ionicons
-                          color={isDeleting ? '#9AA59E' : '#B4462E'}
+                          color={isDeleting ? '#6D7480' : '#FF7B7B'}
                           name="trash-outline"
                           size={20}
                         />
@@ -502,7 +508,7 @@ export function SettingsView({
                 onPress={onCloseExerciseTagDialog}
                 style={styles.exerciseDialogCloseButton}
               >
-                <Ionicons color="#215F9A" name="close" size={22} />
+                <Ionicons color="#5AA7FF" name="close" size={22} />
               </Pressable>
             </View>
             <ScrollView
@@ -534,7 +540,7 @@ export function SettingsView({
                         ]}
                       >
                         <Ionicons
-                          color={isDeleting ? '#9AA59E' : '#B4462E'}
+                          color={isDeleting ? '#6D7480' : '#FF7B7B'}
                           name="trash-outline"
                           size={20}
                         />

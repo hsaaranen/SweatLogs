@@ -109,7 +109,7 @@ export function ExerciseRecordEditorModal({
               onPress={onClose}
               style={styles.exerciseDialogCloseButton}
             >
-              <Ionicons color="#215F9A" name="close" size={22} />
+              <Ionicons color="#5AA7FF" name="close" size={22} />
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={styles.exerciseDialogListContent}>

@@ -2,7 +2,7 @@ import type { TranslationTable } from './en';
 
 export const fi: TranslationTable = {
   appName: 'SweatLogs',
-  tabs: { workout: 'Treeni', calendar: 'Kalenteri', data: 'Tiedot', planner: 'Suunnitelmat', settings: 'Asetukset' },
+  tabs: { workout: 'Treeni', calendar: 'Kalenteri', data: 'Tiedot', planner: 'Treenipohja', settings: 'Asetukset' },
   common: {
     add: 'Lisää', cancel: 'Peruuta', clear: 'Tyhjennä', close: 'Sulje', create: 'Luo', creating: 'Luodaan', delete: 'Poista',
     edit: 'Muokkaa', expand: 'Laajenna', collapse: 'Pienennä', minimize: 'Pienennä', save: 'Tallenna', saving: 'Tallennetaan',

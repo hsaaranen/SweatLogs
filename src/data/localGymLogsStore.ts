@@ -1499,15 +1499,15 @@ const starterExercises: { name: string; setType: ExerciseSetType }[] = [
 ];
 
 const starterWorkoutFocuses = [
-  { name: 'UpperBody', color: '#215F9A' },
-  { name: 'LowerBody', color: '#214E3A' },
-  { name: 'Legs', color: '#D56A3A' },
-  { name: 'Pushing', color: '#B4462E' },
+  { name: 'UpperBody', color: '#1E49A0' },
+  { name: 'LowerBody', color: '#9BA1AD' },
+  { name: 'Legs', color: '#C2410C' },
+  { name: 'Pushing', color: '#A33A2B' },
   { name: 'Pulling', color: '#8E44AD' },
 ];
 
 const starterExerciseMarkers = [
-  { name: 'Easy', color: '#214E3A' },
-  { name: 'Hard', color: '#B4462E' },
-  { name: 'Injured', color: '#8E44AD' },
+  { name: 'Easy', color: '#0F766E' },
+  { name: 'Hard', color: '#C2410C' },
+  { name: 'Injured', color: '#A33A2B' },
 ];
