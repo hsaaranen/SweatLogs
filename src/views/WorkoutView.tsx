@@ -16,6 +16,7 @@ import {
   MAX_WORKOUT_SETS,
   MIN_WORKOUT_SETS,
 } from '../utils/workoutUtils';
+import { t } from '../localization';
 
 type WorkoutViewProps = {
   exerciseSearchText: string;
@@ -115,9 +116,9 @@ export function WorkoutView({
     <>
       {workoutTemplates.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Workout templates</Text>
+          <Text style={styles.sectionTitle}>{t('workout.templates')}</Text>
           <View style={styles.workoutTemplateBlock}>
-            <Text style={styles.workoutTemplateLabel}>Load template</Text>
+            <Text style={styles.workoutTemplateLabel}>{t('workout.loadTemplate')}</Text>
             <ScrollView
               horizontal
               contentContainerStyle={styles.workoutTemplateList}
@@ -140,25 +141,25 @@ export function WorkoutView({
 
       <View style={[styles.section, isWorkoutStarted && styles.activeWorkoutSection]}>
         <View style={styles.activeWorkoutHeader}>
-          <Text style={styles.sectionTitle}>Workout</Text>
+          <Text style={styles.sectionTitle}>{t('workout.title')}</Text>
           {isWorkoutStarted && (
             <View style={styles.activeWorkoutIndicator}>
               <View style={styles.activeWorkoutIndicatorDot} />
-              <Text style={styles.activeWorkoutIndicatorText}>Workout started</Text>
+              <Text style={styles.activeWorkoutIndicatorText}>{t('workout.started')}</Text>
             </View>
           )}
         </View>
         <View style={styles.workoutTagRow}>
-          <Text style={styles.tagRowLabel}>Focus:</Text>
+          <Text style={styles.tagRowLabel}>{t('workout.focus')}</Text>
           <Pressable
-            accessibilityLabel="Choose workout focus"
+            accessibilityLabel={t('workout.chooseFocus')}
             accessibilityRole="button"
             onPress={() => setIsWorkoutTagPickerOpen(true)}
             style={styles.workoutTagChipList}
           >
             {selectedWorkoutTags.length === 0 ? (
               <Text style={styles.workoutTagPlaceholder}>
-                No focus
+                {t('workout.noFocusSelected')}
               </Text>
             ) : (
               selectedWorkoutTags.map((tag) => (
@@ -169,7 +170,7 @@ export function WorkoutView({
               ))
             )}
           </Pressable>
-          <Text style={styles.exerciseCount}>{workoutTotals.exerciseCount} exercises</Text>
+          <Text style={styles.exerciseCount}>{t('workout.exerciseCount', { count: workoutTotals.exerciseCount })}</Text>
         </View>
 
         {workoutExercises.map((entry) => {
@@ -185,7 +186,7 @@ export function WorkoutView({
             <View key={entry.id} style={styles.workoutExercise}>
               <View style={styles.workoutExerciseHeader}>
                 <Pressable
-                  accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${entry.exerciseName}`}
+                  accessibilityLabel={t(isExpanded ? 'actions.collapse' : 'actions.expand', { name: entry.exerciseName })}
                   accessibilityRole="button"
                   onPress={() => onToggleWorkoutExercise(entry.id)}
                   style={styles.workoutExerciseHeaderButton}
@@ -200,7 +201,7 @@ export function WorkoutView({
                   />
                 </Pressable>
                 <Pressable
-                  accessibilityLabel={`Remove ${entry.exerciseName} from workout`}
+                  accessibilityLabel={t('actions.removeFromWorkout', { name: entry.exerciseName })}
                   accessibilityRole="button"
                   hitSlop={8}
                   onPress={() => onRemoveExerciseFromWorkout(entry.id)}
@@ -211,16 +212,16 @@ export function WorkoutView({
               </View>
 
               <View style={styles.workoutExerciseTagRow}>
-                <Text style={styles.tagRowLabel}>Marker:</Text>
+                <Text style={styles.tagRowLabel}>{t('workout.marker')}</Text>
                 <Pressable
-                  accessibilityLabel={`Choose markers for ${entry.exerciseName}`}
+                  accessibilityLabel={t('actions.chooseMarkers', { name: entry.exerciseName })}
                   accessibilityRole="button"
                   onPress={() => setExerciseTagPickerWorkoutExerciseId(entry.id)}
                   style={styles.exerciseTagChipList}
                 >
                   {selectedExerciseTags.length === 0 ? (
                     <Text style={[styles.workoutTagPlaceholder, styles.workoutTagPlaceholderCentered]}>
-                      No markers
+                      {t('workout.noMarkersSelected')}
                     </Text>
                   ) : (
                     selectedExerciseTags.map((tag) => (
@@ -255,10 +256,10 @@ export function WorkoutView({
                   ))}
 
                   <View style={styles.exerciseFooter}>
-                    <Text style={styles.setControlLabel}>Sets</Text>
+                    <Text style={styles.setControlLabel}>{t('workout.sets')}</Text>
                     <View style={styles.setStepper}>
                       <Pressable
-                        accessibilityLabel={`Remove set from ${entry.exerciseName}`}
+                        accessibilityLabel={t('actions.removeSet', { name: entry.exerciseName })}
                         accessibilityRole="button"
                         accessibilityState={{ disabled: hasMinimumSets }}
                         disabled={hasMinimumSets}
@@ -276,7 +277,7 @@ export function WorkoutView({
                       </Pressable>
                       <Text style={styles.setStepperCount}>{entry.sets.length}</Text>
                       <Pressable
-                        accessibilityLabel={`Add set to ${entry.exerciseName}`}
+                        accessibilityLabel={t('actions.addSet', { name: entry.exerciseName })}
                         accessibilityRole="button"
                         accessibilityState={{ disabled: hasMaximumSets }}
                         disabled={hasMaximumSets}
@@ -301,14 +302,14 @@ export function WorkoutView({
         })}
 
         <ExerciseSearchPicker
-          dialogTitle="All exercises"
-          emptyText="Start the API to load exercises."
+          dialogTitle={t('picker.allExercises')}
+          emptyText={t('picker.loadError')}
           exercises={exercises}
           isDialogOpen={isExerciseDialogOpen}
           isLoading={isLoading}
-          loadingText="Loading exercises..."
+          loadingText={t('picker.loadingExercises')}
           searchText={exerciseSearchText}
-          title="Add exercise"
+          title={t('workout.addExercise')}
           onChangeSearch={onChangeExerciseSearch}
           onClearSearch={onClearExerciseSearch}
           onCloseDialog={onCloseExerciseDialog}
@@ -320,7 +321,7 @@ export function WorkoutView({
           maxLength={2000}
           multiline
           onChangeText={onChangeWorkoutNotes}
-          placeholder="Notes"
+          placeholder={t('workout.notes')}
           placeholderTextColor="#6F7A73"
           style={styles.workoutNotesInput}
           textAlignVertical="top"
@@ -343,7 +344,7 @@ export function WorkoutView({
           ]}
         >
           <Text style={styles.saveButtonText}>
-            {isSavingWorkout ? 'Saving workout' : 'Save workout'}
+            {isSavingWorkout ? t('workout.saving') : t('workout.save')}
           </Text>
         </Pressable>
         {isWorkoutStarted && (
@@ -352,7 +353,7 @@ export function WorkoutView({
             onPress={onCancelWorkout}
             style={styles.cancelWorkoutButton}
           >
-            <Text style={styles.cancelWorkoutButtonText}>Cancel workout</Text>
+            <Text style={styles.cancelWorkoutButtonText}>{t('workout.cancel')}</Text>
           </Pressable>
         )}
       </View>
@@ -366,9 +367,9 @@ export function WorkoutView({
         <View style={styles.exerciseDialogOverlay}>
           <View style={styles.exerciseDialog}>
             <View style={styles.exerciseDialogHeader}>
-              <Text style={styles.exerciseDialogTitle}>Workout focus</Text>
+              <Text style={styles.exerciseDialogTitle}>{t('workout.focusDialog')}</Text>
               <Pressable
-                accessibilityLabel="Close workout focus list"
+                accessibilityLabel={t('actions.closeList', { item: t('data.workoutFocus').toLowerCase() })}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={() => setIsWorkoutTagPickerOpen(false)}
@@ -383,17 +384,17 @@ export function WorkoutView({
             >
               {selectedWorkoutTagIds.length > 0 && (
                 <Pressable
-                  accessibilityLabel="Clear workout focus"
+                  accessibilityLabel={t('workout.clearFocus')}
                   accessibilityRole="button"
                   onPress={onClearWorkoutTags}
                   style={styles.workoutTagOption}
                 >
                   <Ionicons color="#6F7A73" name="remove-circle-outline" size={18} />
-                  <Text style={styles.workoutTagOptionText}>Clear focus</Text>
+                  <Text style={styles.workoutTagOptionText}>{t('workout.clearFocus')}</Text>
                 </Pressable>
               )}
               {workoutTags.length === 0 ? (
-                <Text style={styles.emptyText}>No workout focus available.</Text>
+                <Text style={styles.emptyText}>{t('workout.noFocusAvailable')}</Text>
               ) : (
                 workoutTags.map((tag) => {
                   const isSelected = selectedWorkoutTagIds.includes(tag.id);
@@ -401,7 +402,7 @@ export function WorkoutView({
                   return (
                     <Pressable
                       key={tag.id}
-                      accessibilityLabel={`${isSelected ? 'Remove' : 'Add'} ${tag.name}`}
+                      accessibilityLabel={t(isSelected ? 'actions.remove' : 'actions.add', { name: tag.name })}
                       accessibilityRole="button"
                       onPress={() => onToggleWorkoutTag(tag.id)}
                       style={[
@@ -431,10 +432,10 @@ export function WorkoutView({
           <View style={styles.exerciseDialog}>
             <View style={styles.exerciseDialogHeader}>
               <Text style={styles.exerciseDialogTitle}>
-                {selectedExerciseTagPickerEntry?.exerciseName ?? 'Exercise'} markers
+                {t('workout.markersFor', { name: selectedExerciseTagPickerEntry?.exerciseName ?? t('data.exercise') })}
               </Text>
               <Pressable
-                accessibilityLabel="Close exercise marker list"
+                accessibilityLabel={t('actions.closeList', { item: t('data.exerciseMarker').toLowerCase() })}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={() => setExerciseTagPickerWorkoutExerciseId(null)}
@@ -449,17 +450,17 @@ export function WorkoutView({
             >
               {selectedExerciseTagPickerEntry && selectedExerciseTagPickerIds.length > 0 && (
                 <Pressable
-                  accessibilityLabel="Clear exercise markers"
+                  accessibilityLabel={t('workout.clearMarkers')}
                   accessibilityRole="button"
                   onPress={() => onClearExerciseTags(selectedExerciseTagPickerEntry.id)}
                   style={styles.workoutTagOption}
                 >
                   <Ionicons color="#6F7A73" name="remove-circle-outline" size={18} />
-                  <Text style={styles.workoutTagOptionText}>Clear markers</Text>
+                  <Text style={styles.workoutTagOptionText}>{t('workout.clearMarkers')}</Text>
                 </Pressable>
               )}
               {exerciseTags.length === 0 ? (
-                <Text style={styles.emptyText}>No exercise markers available.</Text>
+                <Text style={styles.emptyText}>{t('workout.noMarkersAvailable')}</Text>
               ) : (
                 exerciseTags.map((tag) => {
                   const isSelected = selectedExerciseTagPickerIds.includes(tag.id);
@@ -467,7 +468,7 @@ export function WorkoutView({
                   return (
                     <Pressable
                       key={tag.id}
-                      accessibilityLabel={`${isSelected ? 'Remove' : 'Add'} ${tag.name}`}
+                      accessibilityLabel={t(isSelected ? 'actions.remove' : 'actions.add', { name: tag.name })}
                       accessibilityRole="button"
                       onPress={() => {
                         if (selectedExerciseTagPickerEntry) {
@@ -498,23 +499,23 @@ function getSetInputFields(setType: ExerciseSetType): SetInputField[] {
   switch (setType) {
     case 'Strength':
       return [
-        { field: 'reps', label: 'Reps', keyboardType: 'number-pad' },
-        { field: 'weight', label: 'Weight', keyboardType: 'decimal-pad' },
+        { field: 'reps', label: t('record.reps'), keyboardType: 'number-pad' },
+        { field: 'weight', label: t('record.weight'), keyboardType: 'decimal-pad' },
       ];
     case 'RepsOnly':
-      return [{ field: 'reps', label: 'Reps', keyboardType: 'number-pad' }];
+      return [{ field: 'reps', label: t('record.reps'), keyboardType: 'number-pad' }];
     case 'Duration':
       return [
-        { field: 'durationMinutes', label: 'Min', keyboardType: 'number-pad' },
-        { field: 'durationSeconds', label: 'Sec', keyboardType: 'number-pad' },
+        { field: 'durationMinutes', label: t('record.minutes'), keyboardType: 'number-pad' },
+        { field: 'durationSeconds', label: t('record.seconds'), keyboardType: 'number-pad' },
       ];
     case 'Distance':
-      return [{ field: 'distanceKm', label: 'Km', keyboardType: 'decimal-pad' }];
+      return [{ field: 'distanceKm', label: t('record.kilometers'), keyboardType: 'decimal-pad' }];
     case 'DistanceDuration':
       return [
-        { field: 'distanceKm', label: 'Km', keyboardType: 'decimal-pad' },
-        { field: 'durationMinutes', label: 'Min', keyboardType: 'number-pad' },
-        { field: 'durationSeconds', label: 'Sec', keyboardType: 'number-pad' },
+        { field: 'distanceKm', label: t('record.kilometers'), keyboardType: 'decimal-pad' },
+        { field: 'durationMinutes', label: t('record.minutes'), keyboardType: 'number-pad' },
+        { field: 'durationSeconds', label: t('record.seconds'), keyboardType: 'number-pad' },
       ];
   }
 }

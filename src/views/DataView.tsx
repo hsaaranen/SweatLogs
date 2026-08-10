@@ -19,6 +19,7 @@ import {
   formatWorkoutTagLabel,
   normalizeExerciseSearch,
 } from '../utils/workoutUtils';
+import { t } from '../localization';
 
 type DataViewProps = {
   dataSearchMode: DataSearchMode;
@@ -90,12 +91,6 @@ type TagSearchPickerProps<TTag extends TagItem> = {
   onSelectTag: (tag: TTag) => void;
 };
 
-const dataSearchModeOptions: DataSearchModeOption[] = [
-  { label: 'Exercises', value: 'exercise' },
-  { label: 'Exercise markers', value: 'exerciseTag' },
-  { label: 'Workout focus', value: 'workoutTag' },
-];
-
 export function DataView({
   dataSearchMode,
   exerciseSearchText,
@@ -138,6 +133,11 @@ export function DataView({
   onUpdateRecord,
   onDeleteRecord,
 }: DataViewProps) {
+  const dataSearchModeOptions: DataSearchModeOption[] = [
+    { label: t('common.exercises'), value: 'exercise' },
+    { label: t('settings.exerciseMarkers'), value: 'exerciseTag' },
+    { label: t('data.workoutFocus'), value: 'workoutTag' },
+  ];
   const [expandedWorkoutIds, setExpandedWorkoutIds] = useState<string[]>([]);
   const [expandedRecordIds, setExpandedRecordIds] = useState<string[]>([]);
   const [editingRecord, setEditingRecord] = useState<ExerciseRecord | null>(null);
@@ -190,7 +190,7 @@ export function DataView({
     return (
       <View style={styles.plannerTemplateActions}>
         <Pressable
-          accessibilityLabel={`Edit record from ${record.completedAt}`}
+          accessibilityLabel={t('actions.edit', { name: record.completedAt })}
           accessibilityRole="button"
           disabled={isBusy}
           hitSlop={8}
@@ -199,7 +199,7 @@ export function DataView({
           <Ionicons color={isBusy ? '#9AA59E' : '#215F9A'} name="create-outline" size={20} />
         </Pressable>
         <Pressable
-          accessibilityLabel={`Delete record from ${record.completedAt}`}
+          accessibilityLabel={t('actions.delete', { name: record.completedAt })}
           accessibilityRole="button"
           disabled={isBusy}
           hitSlop={8}
@@ -213,7 +213,7 @@ export function DataView({
   const renderRecordTags = (record: ExerciseRecord) => (
     <View style={styles.historyTitleBlock}>
       {record.tags.length === 0 ? (
-        <Text style={styles.workoutTagPlaceholder}>No markers</Text>
+        <Text style={styles.workoutTagPlaceholder}>{t('data.noMarkers')}</Text>
       ) : (
         record.tags.map((tag) => <TagChip key={tag.id} tag={tag} />)
       )}
@@ -259,7 +259,7 @@ export function DataView({
         <View key={record.id} style={styles.historyItem}>
           <View style={styles.historyHeader}>
             <Pressable
-              accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${record.completedAt}`}
+              accessibilityLabel={t(isExpanded ? 'actions.collapse' : 'actions.expand', { name: record.completedAt })}
               accessibilityRole="button"
               onPress={() => toggleRecordExpanded(record.id)}
               style={styles.historyHeaderButton}
@@ -310,7 +310,7 @@ export function DataView({
     if (!selectedExercise) {
       return (
         <View style={styles.historyItem}>
-          <Text style={styles.emptyText}>Select an exercise to view previous records.</Text>
+          <Text style={styles.emptyText}>{t('data.selectExercise')}</Text>
         </View>
       );
     }
@@ -326,8 +326,8 @@ export function DataView({
           />
         </View>
         {renderRecordCards(
-          `No records for ${selectedExercise.name} yet.`,
-          `Loading records for ${selectedExercise.name}...`,
+          t('data.noRecords', { name: selectedExercise.name }),
+          t('data.loadingRecords', { name: selectedExercise.name }),
         )}
       </>
     );
@@ -337,7 +337,7 @@ export function DataView({
     if (!selectedExerciseTag) {
       return (
         <View style={styles.historyItem}>
-          <Text style={styles.emptyText}>Select an exercise marker to list matching exercises.</Text>
+          <Text style={styles.emptyText}>{t('data.selectMarker')}</Text>
         </View>
       );
     }
@@ -345,7 +345,7 @@ export function DataView({
     if (isLoadingTagResults) {
       return (
         <View style={styles.historyItem}>
-          <Text style={styles.emptyText}>Loading exercises for {selectedExerciseTag.name}...</Text>
+          <Text style={styles.emptyText}>{t('data.loadingFor', { items: t('common.exercises').toLowerCase(), name: selectedExerciseTag.name })}</Text>
         </View>
       );
     }
@@ -354,7 +354,7 @@ export function DataView({
       <>
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.exercisePickerTitle}>Exercises</Text>
+            <Text style={styles.exercisePickerTitle}>{t('common.exercises')}</Text>
             <TagChip tag={selectedExerciseTag} />
           </View>
           <Text style={styles.exercisePickerStatus}>
@@ -363,7 +363,7 @@ export function DataView({
         </View>
         {exerciseTagExercises.length === 0 ? (
           <View style={styles.historyItem}>
-            <Text style={styles.emptyText}>No exercises have {selectedExerciseTag.name} records yet.</Text>
+            <Text style={styles.emptyText}>{t('data.noExerciseRecords', { name: selectedExerciseTag.name })}</Text>
           </View>
         ) : (
           exerciseTagExercises.map((exercise) => {
@@ -372,7 +372,7 @@ export function DataView({
             return (
               <View key={exercise.id} style={styles.historyItem}>
                 <Pressable
-                  accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${exercise.name}`}
+                  accessibilityLabel={t(isExpanded ? 'actions.collapse' : 'actions.expand', { name: exercise.name })}
                   accessibilityRole="button"
                   onPress={() => (isExpanded ? onClearSelectedExercise() : onSelectExercise(exercise))}
                   style={styles.historyHeaderButton}
@@ -389,8 +389,8 @@ export function DataView({
                 </Pressable>
 
                 {isExpanded && renderInlineRecordBlocks(
-                  `No ${selectedExerciseTag.name} records for ${exercise.name} yet.`,
-                  `Loading ${selectedExerciseTag.name} records for ${exercise.name}...`,
+                  t('data.noTaggedRecords', { tag: selectedExerciseTag.name, name: exercise.name }),
+                  t('data.loadingTaggedRecords', { tag: selectedExerciseTag.name, name: exercise.name }),
                 )}
               </View>
             );
@@ -403,7 +403,7 @@ export function DataView({
     if (!selectedWorkoutTag) {
       return (
         <View style={styles.historyItem}>
-          <Text style={styles.emptyText}>Select a workout focus to list matching workouts.</Text>
+          <Text style={styles.emptyText}>{t('data.selectFocus')}</Text>
         </View>
       );
     }
@@ -411,7 +411,7 @@ export function DataView({
     if (isLoadingTagResults) {
       return (
         <View style={styles.historyItem}>
-          <Text style={styles.emptyText}>Loading workouts for {selectedWorkoutTag.name}...</Text>
+          <Text style={styles.emptyText}>{t('data.loadingFor', { items: t('common.workouts').toLowerCase(), name: selectedWorkoutTag.name })}</Text>
         </View>
       );
     }
@@ -420,7 +420,7 @@ export function DataView({
       <>
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.exercisePickerTitle}>Workouts</Text>
+            <Text style={styles.exercisePickerTitle}>{t('common.workouts')}</Text>
             <TagChip tag={selectedWorkoutTag} />
           </View>
           <Text style={styles.exercisePickerStatus}>
@@ -429,7 +429,7 @@ export function DataView({
         </View>
         {workoutTagWorkouts.length === 0 ? (
           <View style={styles.historyItem}>
-            <Text style={styles.emptyText}>No workouts have {selectedWorkoutTag.name} yet.</Text>
+            <Text style={styles.emptyText}>{t('data.noWorkouts', { name: selectedWorkoutTag.name })}</Text>
           </View>
         ) : (
           workoutTagWorkouts.map((workout) => {
@@ -439,14 +439,14 @@ export function DataView({
             return (
               <View key={workout.id} style={styles.historyItem}>
                 <Pressable
-                  accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${workoutTitle}`}
+                  accessibilityLabel={t(isExpanded ? 'actions.collapse' : 'actions.expand', { name: workoutTitle })}
                   accessibilityRole="button"
                   onPress={() => toggleWorkoutExpanded(workout.id)}
                   style={styles.historyHeaderButton}
                 >
                   <View style={styles.historyTitleBlock}>
                     {workout.tags.length === 0 ? (
-                      <Text style={styles.workoutTagPlaceholder}>No focus</Text>
+                      <Text style={styles.workoutTagPlaceholder}>{t('data.noFocus')}</Text>
                     ) : (
                       workout.tags.map((tag) => <TagChip key={tag.id} tag={tag} />)
                     )}
@@ -513,7 +513,7 @@ export function DataView({
             return (
               <Pressable
                 key={option.value}
-                accessibilityLabel={`Search ${option.label}`}
+                accessibilityLabel={t('actions.searchItem', { item: option.label })}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
                 onPress={() => onChangeDataSearchMode(option.value)}
@@ -539,10 +539,10 @@ export function DataView({
             exercises={exercises}
             isDialogOpen={isExerciseDialogOpen}
             isLoading={isLoading}
-            loadingText="Loading exercises..."
-            buttonText="Search"
+            loadingText={t('settings.loadingExercises')}
+            buttonText={t('common.search')}
             searchText={exerciseSearchText}
-            title="Exercise"
+            title={t('data.exercise')}
             onChangeSearch={onChangeExerciseSearch}
             onClearSearch={onClearExerciseSearch}
             onCloseDialog={onCloseExerciseDialog}
@@ -557,13 +557,13 @@ export function DataView({
             emptyText="Create exercise markers in Settings first."
             isDialogOpen={isExerciseTagDialogOpen}
             isLoading={isLoading}
-            loadingText="Loading exercise markers..."
+            loadingText={t('settings.loadingMarkers')}
             presentation="button"
-            buttonText="Search"
+            buttonText={t('common.search')}
             searchText={exerciseTagSearchText}
             selectedTag={selectedExerciseTag}
             tags={exerciseTags}
-            title="Exercise marker"
+            title={t('data.exerciseMarker')}
             pluralTitle="exercise markers"
             onChangeSearch={onChangeExerciseTagSearch}
             onClearSearch={onClearExerciseTagSearch}
@@ -579,13 +579,13 @@ export function DataView({
             emptyText="Create workout focus in Settings first."
             isDialogOpen={isWorkoutTagDialogOpen}
             isLoading={isLoading}
-            loadingText="Loading workout focus..."
+            loadingText={t('settings.loadingFocuses')}
             presentation="button"
-            buttonText="Search"
+            buttonText={t('common.search')}
             searchText={workoutTagSearchText}
             selectedTag={selectedWorkoutTag}
             tags={workoutTags}
-            title="Workout focus"
+            title={t('data.workoutFocus')}
             pluralTitle="workout focus"
             onChangeSearch={onChangeWorkoutTagSearch}
             onClearSearch={onClearWorkoutTagSearch}
@@ -648,11 +648,11 @@ function TagSearchPicker<TTag extends TagItem>({
   const dialogTags = trimmedSearch ? matchingTags : tags;
 
   const pickerStatus = trimmedSearch
-    ? `${visibleTags.length} suggestion${visibleTags.length === 1 ? '' : 's'}`
-    : `${tags.length} ${tags.length === 1 ? title.toLowerCase() : pluralTitle} available`;
+    ? t('picker.suggestions', { count: visibleTags.length })
+    : t('picker.matches', { count: tags.length });
   const dialogStatus = trimmedSearch
-    ? `${dialogTags.length} match${dialogTags.length === 1 ? '' : 'es'}`
-    : `${tags.length} ${tags.length === 1 ? title.toLowerCase() : pluralTitle} available`;
+    ? t('picker.matches', { count: dialogTags.length })
+    : t('picker.matches', { count: tags.length });
 
   const buttonLabel = buttonText ?? title;
 
@@ -668,7 +668,7 @@ function TagSearchPicker<TTag extends TagItem>({
     <>
       {presentation === 'button' ? (
         <Pressable
-          accessibilityLabel={`Search ${pluralTitle}`}
+              accessibilityLabel={t('actions.searchItem', { item: pluralTitle })}
           accessibilityRole="button"
           onPress={onOpenDialog}
           style={styles.addExercisePickerButton}
@@ -681,16 +681,16 @@ function TagSearchPicker<TTag extends TagItem>({
           <View style={styles.exercisePickerHeaderRow}>
             <Text style={styles.exercisePickerTitle}>{title}</Text>
             <Pressable
-              accessibilityLabel={`Browse all ${pluralTitle}`}
+              accessibilityLabel={t('actions.browseItems', { items: pluralTitle })}
               accessibilityRole="button"
               onPress={onOpenDialog}
             >
-              <Text style={styles.exercisePickerActionText}>Browse all</Text>
+              <Text style={styles.exercisePickerActionText}>{t('common.browseAll')}</Text>
             </Pressable>
           </View>
           <TextInput
             onChangeText={onChangeSearch}
-            placeholder={`Search ${pluralTitle}`}
+            placeholder={t('actions.searchItem', { item: pluralTitle })}
             placeholderTextColor="#6F7A73"
             style={styles.exerciseSearchInput}
             value={searchText}
@@ -700,14 +700,14 @@ function TagSearchPicker<TTag extends TagItem>({
             <View style={styles.exercisePickerActions}>
               {searchText.length > 0 && (
                 <Pressable onPress={onClearSearch}>
-                  <Text style={styles.exercisePickerActionText}>Clear</Text>
+                  <Text style={styles.exercisePickerActionText}>{t('common.clear')}</Text>
                 </Pressable>
               )}
             </View>
           </View>
 
           {isSuggestionListOpen && visibleTags.length === 0 ? (
-            <Text style={styles.emptyText}>No matches for that search.</Text>
+            <Text style={styles.emptyText}>{t('common.noMatches')}</Text>
           ) : isSuggestionListOpen ? (
             <View style={styles.exerciseList}>
               {visibleTags.map((tag) => (
@@ -735,7 +735,7 @@ function TagSearchPicker<TTag extends TagItem>({
             <View style={styles.exerciseDialogHeader}>
               <Text style={styles.exerciseDialogTitle}>{dialogTitle}</Text>
               <Pressable
-                accessibilityLabel={`Close ${title.toLowerCase()} list`}
+                accessibilityLabel={t('actions.closeList', { item: title.toLowerCase() })}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={onCloseDialog}
@@ -746,7 +746,7 @@ function TagSearchPicker<TTag extends TagItem>({
             </View>
             <TextInput
               onChangeText={onChangeSearch}
-              placeholder={`Search ${pluralTitle}`}
+              placeholder={t('actions.searchItem', { item: pluralTitle })}
               placeholderTextColor="#6F7A73"
               style={styles.exerciseSearchInput}
               value={searchText}
@@ -755,7 +755,7 @@ function TagSearchPicker<TTag extends TagItem>({
               <Text style={styles.exercisePickerStatus}>{dialogStatus}</Text>
               {searchText.length > 0 && (
                 <Pressable onPress={onClearSearch}>
-                  <Text style={styles.exercisePickerActionText}>Clear</Text>
+                  <Text style={styles.exercisePickerActionText}>{t('common.clear')}</Text>
                 </Pressable>
               )}
             </View>
@@ -764,7 +764,7 @@ function TagSearchPicker<TTag extends TagItem>({
               style={styles.exerciseDialogList}
             >
               {dialogTags.length === 0 ? (
-                <Text style={styles.emptyText}>No matches for that search.</Text>
+                <Text style={styles.emptyText}>{t('common.noMatches')}</Text>
               ) : (
                 dialogTags.map((tag) => (
                   <TagOption
@@ -794,7 +794,7 @@ function TagOption<TTag extends TagItem>({
 }) {
   return (
     <Pressable
-      accessibilityLabel={`Select ${tag.name}`}
+      accessibilityLabel={t('actions.select', { name: tag.name })}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
       onPress={() => onPress(tag)}

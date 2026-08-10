@@ -16,19 +16,19 @@ import {
   WorkoutSetHistory,
   WorkoutTag,
 } from '../types';
+import { formatDate, t } from '../localization';
 
-export const DEFAULT_WORKOUT_LABEL = 'Untagged workout';
 export const DEFAULT_WORKOUT_TAG_COLOR = '#9AA59E';
 export const DEFAULT_EXERCISE_SET_TYPE: ExerciseSetType = 'Strength';
 export const MIN_WORKOUT_SETS = 1;
 export const MAX_WORKOUT_SETS = 15;
 
-export const EXERCISE_SET_TYPE_OPTIONS: { value: ExerciseSetType; label: string }[] = [
-  { value: 'Strength', label: 'Strength' },
-  { value: 'Duration', label: 'Duration' },
-  { value: 'RepsOnly', label: 'Reps only' },
-  { value: 'Distance', label: 'Distance' },
-  { value: 'DistanceDuration', label: 'Distance + time' },
+export const getExerciseSetTypeOptions = (): { value: ExerciseSetType; label: string }[] => [
+  { value: 'Strength', label: t('setTypes.strength') },
+  { value: 'Duration', label: t('setTypes.duration') },
+  { value: 'RepsOnly', label: t('setTypes.repsOnly') },
+  { value: 'Distance', label: t('setTypes.distance') },
+  { value: 'DistanceDuration', label: t('setTypes.distanceTime') },
 ];
 
 export const createId = () => Math.random().toString(36).slice(2);
@@ -73,15 +73,15 @@ export const sortExerciseTags = (items: ExerciseTag[]) =>
   [...items].sort((left, right) => left.name.localeCompare(right.name));
 
 export const formatWorkoutTagLabel = (tags: WorkoutTag[]) =>
-  tags.length > 0 ? tags.map((tag) => tag.name).join(' / ') : DEFAULT_WORKOUT_LABEL;
+  tags.length > 0 ? tags.map((tag) => tag.name).join(' / ') : t('workout.untagged');
 
 export const normalizeExerciseSearch = (value: string) => value.trim().toLocaleLowerCase();
 
 export const getErrorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : 'Something went wrong.';
+  error instanceof Error ? error.message : t('messages.genericError');
 
 export const getExerciseSetTypeLabel = (setType: ExerciseSetType) =>
-  EXERCISE_SET_TYPE_OPTIONS.find((option) => option.value === setType)?.label ?? setType;
+  getExerciseSetTypeOptions().find((option) => option.value === setType)?.label ?? setType;
 
 export function formatLocalDateKey(date: Date) {
   const year = date.getFullYear();
@@ -99,18 +99,18 @@ export function buildWorkoutRequest(
   const notes = workoutNotes.trim();
 
   if (selectedWorkoutTagIds.length === 0) {
-    return { error: 'Workout focus is required.' };
+    return { error: t('validation.focusRequired') };
   }
 
   if (notes.length > 2000) {
-    return { error: 'Workout notes must be 2000 characters or fewer.' };
+    return { error: t('validation.notesLength') };
   }
 
   const exercises = [];
 
   for (const exercise of workoutExercises) {
     if (exercise.sets.length > MAX_WORKOUT_SETS) {
-      return { error: `${exercise.exerciseName} can have at most ${MAX_WORKOUT_SETS} sets.` };
+      return { error: t('validation.maxSets', { name: exercise.exerciseName, count: MAX_WORKOUT_SETS }) };
     }
 
     const sets = [];
@@ -129,7 +129,7 @@ export function buildWorkoutRequest(
     }
 
     if (sets.length === 0) {
-      return { error: `Add at least one completed set for ${exercise.exerciseName}.` };
+      return { error: t('validation.completedSetRequired', { name: exercise.exerciseName }) };
     }
 
     exercises.push({
@@ -194,7 +194,7 @@ export function mapWorkoutToHistory(workout: WorkoutResponse): WorkoutHistory {
     id: workout.id,
     tags: workout.tags ?? [],
     notes: workout.notes?.trim() ?? '',
-    completedAt: completedDate.toLocaleDateString(),
+    completedAt: formatDate(completedDate),
     completedDateKey: formatLocalDateKey(completedDate),
     exercises,
     setCount: exercises.reduce((sum, exercise) => sum + exercise.setCount, 0),
@@ -218,7 +218,7 @@ export function mapExerciseRecordToData(record: ExerciseRecordResponse): Exercis
     workoutId: record.workoutId,
     setType: record.setType ?? DEFAULT_EXERCISE_SET_TYPE,
     tags: record.tags ?? [],
-    completedAt: completedDate.toLocaleDateString(),
+    completedAt: formatDate(completedDate),
     completedDateKey: formatLocalDateKey(completedDate),
     sets: record.sets.map((set) => ({
       setNumber: set.setNumber,
@@ -279,12 +279,12 @@ function buildWorkoutSetRequest(
     case 'Strength': {
       const reps = parsePositiveInteger(set.reps);
       if (reps === null) {
-        return { error: `Reps must be a positive whole number for ${exerciseName}.` };
+        return { error: t('validation.positiveReps', { name: exerciseName }) };
       }
 
       const weight = parseZeroOrPositiveDecimal(set.weight);
       if (weight === null) {
-        return { error: `Weight must be zero or more for ${exerciseName}.` };
+        return { error: t('validation.nonnegativeWeight', { name: exerciseName }) };
       }
 
       return { set: { reps, weight } };
@@ -292,7 +292,7 @@ function buildWorkoutSetRequest(
     case 'RepsOnly': {
       const reps = parsePositiveInteger(set.reps);
       if (reps === null) {
-        return { error: `Reps must be a positive whole number for ${exerciseName}.` };
+        return { error: t('validation.positiveReps', { name: exerciseName }) };
       }
 
       return { set: { reps } };
@@ -308,7 +308,7 @@ function buildWorkoutSetRequest(
     case 'Distance': {
       const distanceMeters = parseDistanceMeters(set.distanceKm);
       if (distanceMeters === null) {
-        return { error: `Distance must be a positive number of kilometers for ${exerciseName}.` };
+        return { error: t('validation.positiveDistance', { name: exerciseName }) };
       }
 
       return { set: { distanceMeters } };
@@ -316,7 +316,7 @@ function buildWorkoutSetRequest(
     case 'DistanceDuration': {
       const distanceMeters = parseDistanceMeters(set.distanceKm);
       if (distanceMeters === null) {
-        return { error: `Distance must be a positive number of kilometers for ${exerciseName}.` };
+        return { error: t('validation.positiveDistance', { name: exerciseName }) };
       }
 
       const durationResult = parseDurationInput(exerciseName, set);
@@ -356,16 +356,16 @@ function parseDurationInput(
   const seconds = parseDurationPart(set.durationSeconds);
 
   if (minutes === null || seconds === null) {
-    return { error: `Time must use whole minutes and seconds for ${exerciseName}.` };
+    return { error: t('validation.wholeTime', { name: exerciseName }) };
   }
 
   if (seconds > 59) {
-    return { error: `Seconds must be between 0 and 59 for ${exerciseName}.` };
+    return { error: t('validation.secondsRange', { name: exerciseName }) };
   }
 
   const durationSeconds = minutes * 60 + seconds;
   if (durationSeconds <= 0) {
-    return { error: `Time must be greater than zero for ${exerciseName}.` };
+    return { error: t('validation.positiveTime', { name: exerciseName }) };
   }
 
   return { durationSeconds };

@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-nativ
 import { styles } from '../styles';
 import { Exercise } from '../types';
 import { normalizeExerciseSearch } from '../utils/workoutUtils';
+import { t } from '../localization';
 
 type ExerciseSearchPickerProps = {
   dialogTitle: string;
@@ -55,11 +56,11 @@ export function ExerciseSearchPicker({
   const dialogExercises = trimmedSearch ? matchingExercises : exercises;
 
   const pickerStatus = trimmedSearch
-    ? `${visibleExercises.length} suggestion${visibleExercises.length === 1 ? '' : 's'}`
-    : `${exercises.length} exercise${exercises.length === 1 ? '' : 's'} available`;
+    ? t('picker.suggestions', { count: visibleExercises.length })
+    : t('picker.exercisesAvailable', { count: exercises.length });
   const dialogStatus = trimmedSearch
-    ? `${dialogExercises.length} match${dialogExercises.length === 1 ? '' : 'es'}`
-    : `${exercises.length} exercise${exercises.length === 1 ? '' : 's'} available`;
+    ? t('picker.matches', { count: dialogExercises.length })
+    : t('picker.exercisesAvailable', { count: exercises.length });
 
   const buttonLabel = buttonText ?? title;
 
@@ -80,7 +81,7 @@ export function ExerciseSearchPicker({
 			onPress={onOpenDialog}
 			style={styles.addExercisePickerButton}
 		>
-			<Ionicons color="#FFFFFF" name={buttonLabel === 'Search' ? 'search' : 'add'} size={20} />
+			<Ionicons color="#FFFFFF" name={buttonLabel === t('common.search') ? 'search' : 'add'} size={20} />
 			<Text style={styles.addExercisePickerButtonText}>{buttonLabel}</Text>
 		</Pressable>
       
@@ -95,7 +96,7 @@ export function ExerciseSearchPicker({
             <View style={styles.exerciseDialogHeader}>
               <Text style={styles.exerciseDialogTitle}>{dialogTitle}</Text>
               <Pressable
-                accessibilityLabel="Close exercise list"
+                accessibilityLabel={t('picker.closeExerciseList')}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={onCloseDialog}
@@ -106,7 +107,7 @@ export function ExerciseSearchPicker({
             </View>
             <TextInput
               onChangeText={onChangeSearch}
-              placeholder="Search exercises"
+              placeholder={t('picker.searchExercises')}
               placeholderTextColor="#6F7A73"
               style={styles.exerciseSearchInput}
               value={searchText}
@@ -115,7 +116,7 @@ export function ExerciseSearchPicker({
               <Text style={styles.exercisePickerStatus}>{dialogStatus}</Text>
               {searchText.length > 0 && (
                 <Pressable onPress={onClearSearch}>
-                  <Text style={styles.exercisePickerActionText}>Clear</Text>
+                  <Text style={styles.exercisePickerActionText}>{t('common.clear')}</Text>
                 </Pressable>
               )}
             </View>
@@ -124,7 +125,7 @@ export function ExerciseSearchPicker({
               style={styles.exerciseDialogList}
             >
               {dialogExercises.length === 0 ? (
-                <Text style={styles.emptyText}>No exercises match that search.</Text>
+                <Text style={styles.emptyText}>{t('picker.noExerciseMatches')}</Text>
               ) : (
                 dialogExercises.map((exercise) => (
                   <Pressable

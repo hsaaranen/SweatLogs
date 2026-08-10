@@ -5,6 +5,7 @@ import { ExerciseSearchPicker } from '../components/ExerciseSearchPicker';
 import { styles } from '../styles';
 import { Exercise, WorkoutTag, WorkoutTemplate, WorkoutTemplateExercise } from '../types';
 import { MAX_WORKOUT_SETS, MIN_WORKOUT_SETS } from '../utils/workoutUtils';
+import { t } from '../localization';
 
 type PlannerViewProps = {
   exercises: Exercise[];
@@ -73,26 +74,26 @@ export function PlannerView({
     <>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          {editingTemplateId ? 'Edit workout template' : 'Create workout template'}
+          {editingTemplateId ? t('planner.editTemplate') : t('planner.createTemplate')}
         </Text>
         <TextInput
           onChangeText={onChangeTemplateName}
-          placeholder="Template name"
+          placeholder={t('planner.templateName')}
           style={styles.exerciseInput}
           value={templateName}
         />
 
         <View style={styles.workoutTagRow}>
-          <Text style={styles.tagRowLabel}>Focus:</Text>
+          <Text style={styles.tagRowLabel}>{t('workout.focus')}</Text>
           <Pressable
-            accessibilityLabel="Choose workout focus"
+            accessibilityLabel={t('workout.chooseFocus')}
             accessibilityRole="button"
             onPress={() => setIsTagPickerOpen(true)}
             style={styles.workoutTagChipList}
           >
             {selectedTags.length === 0 ? (
               <Text style={styles.workoutTagPlaceholder}>
-                No focus
+                {t('workout.noFocusSelected')}
               </Text>
             ) : (
               selectedTags.map((tag) => (
@@ -106,19 +107,19 @@ export function PlannerView({
         </View>
 
         <ExerciseSearchPicker
-          dialogTitle="All exercises"
-          emptyText="No exercises available."
+          dialogTitle={t('picker.allExercises')}
+          emptyText={t('settings.noExercises')}
           exercises={availableExercises}
           isDialogOpen={isExerciseDialogOpen}
           isLoading={false}
-          loadingText="Loading exercises..."
+          loadingText={t('picker.loadingExercises')}
           onChangeSearch={onChangeExerciseSearch}
           onClearSearch={onClearExerciseSearch}
           onCloseDialog={onCloseExerciseDialog}
           onOpenDialog={onOpenExerciseDialog}
           onSelectExercise={onAddExercise}
           searchText={exerciseSearchText}
-          title="Add exercise"
+          title={t('planner.addExercise')}
         />
 
         <View style={styles.plannerExerciseList}>
@@ -134,7 +135,7 @@ export function PlannerView({
                 >
                   <Ionicons color="#215F9A" name="remove" size={18} />
                 </Pressable>
-                <Text style={styles.plannerSetCountText}>{setCount} sets</Text>
+                <Text style={styles.plannerSetCountText}>{setCount} {t('common.sets')}</Text>
                 <Pressable
                   disabled={setCount >= MAX_WORKOUT_SETS}
                   onPress={() => onUpdateSetCount(exercise.id, setCount + 1)}
@@ -168,20 +169,20 @@ export function PlannerView({
           ]}
         >
           <Text style={styles.addButtonText}>
-            {isSaving ? 'Saving' : editingTemplateId ? 'Save changes' : 'Save template'}
+            {isSaving ? t('common.saving') : editingTemplateId ? t('record.saveChanges') : t('planner.saveTemplate')}
           </Text>
         </Pressable>
         {editingTemplateId && (
           <Pressable onPress={onCancelEdit} style={styles.cancelWorkoutButton}>
-            <Text style={styles.cancelWorkoutButtonText}>Cancel editing</Text>
+            <Text style={styles.cancelWorkoutButtonText}>{t('planner.cancelEditing')}</Text>
           </Pressable>
         )}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Saved templates</Text>
+        <Text style={styles.sectionTitle}>{t('planner.savedTemplates')}</Text>
         {templates.length === 0 ? (
-          <Text style={styles.emptyText}>No workout templates yet.</Text>
+          <Text style={styles.emptyText}>{t('planner.noTemplates')}</Text>
         ) : (
           templates.map((template) => {
             const isExpanded = expandedTemplateId === template.id;
@@ -190,7 +191,7 @@ export function PlannerView({
               <View key={template.id} style={styles.plannerTemplateCard}>
                 <View style={styles.plannerTemplateHeader}>
                   <Pressable
-                    accessibilityLabel={`${isExpanded ? 'Minimize' : 'Expand'} ${template.name}`}
+                    accessibilityLabel={t(isExpanded ? 'actions.collapse' : 'actions.expand', { name: template.name })}
                     accessibilityRole="button"
                     onPress={() =>
                       setExpandedTemplateId((current) =>
@@ -202,8 +203,7 @@ export function PlannerView({
                     <View style={styles.plannerTemplateTitleBlock}>
                       <Text style={styles.plannerTemplateTitle}>{template.name}</Text>
                       <Text style={styles.plannerTemplateMeta}>
-                        {template.exercises.length} exercise
-                        {template.exercises.length === 1 ? '' : 's'}
+                        {t('workout.exerciseCount', { count: template.exercises.length })}
                       </Text>
                     </View>
                     <Ionicons
@@ -214,7 +214,7 @@ export function PlannerView({
                   </Pressable>
                   <View style={styles.plannerTemplateActions}>
                     <Pressable
-                      accessibilityLabel={`Edit ${template.name}`}
+                      accessibilityLabel={t('actions.edit', { name: template.name })}
                       accessibilityRole="button"
                       onPress={() => onEdit(template)}
                     >
@@ -244,7 +244,7 @@ export function PlannerView({
                           <Text style={styles.plannerExerciseOrder}>{index + 1}</Text>
                           <Text style={styles.plannerExerciseName}>{exercise.name}</Text>
                           <View style={styles.plannerSavedSetCount}>
-                            <Text style={styles.plannerSetCountText}>{setCount} sets</Text>
+                            <Text style={styles.plannerSetCountText}>{setCount} {t('common.sets')}</Text>
                           </View>
                         </View>
                       ))}
@@ -266,9 +266,9 @@ export function PlannerView({
         <View style={styles.exerciseDialogOverlay}>
           <View style={styles.exerciseDialog}>
             <View style={styles.exerciseDialogHeader}>
-              <Text style={styles.exerciseDialogTitle}>Workout focus</Text>
+              <Text style={styles.exerciseDialogTitle}>{t('workout.focusDialog')}</Text>
               <Pressable
-                accessibilityLabel="Close workout focus list"
+                accessibilityLabel={t('actions.closeList', { item: t('data.workoutFocus').toLowerCase() })}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={() => setIsTagPickerOpen(false)}
@@ -288,11 +288,11 @@ export function PlannerView({
                   style={styles.workoutTagOption}
                 >
                   <Ionicons color="#6F7A73" name="remove-circle-outline" size={18} />
-                  <Text style={styles.workoutTagOptionText}>Clear focus</Text>
+                  <Text style={styles.workoutTagOptionText}>{t('workout.clearFocus')}</Text>
                 </Pressable>
               )}
               {workoutTags.length === 0 ? (
-                <Text style={styles.emptyText}>No workout focus available.</Text>
+                <Text style={styles.emptyText}>{t('workout.noFocusAvailable')}</Text>
               ) : (
                 workoutTags.map((tag) => {
                   const isSelected = selectedTagIds.includes(tag.id);

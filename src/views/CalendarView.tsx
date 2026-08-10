@@ -10,6 +10,7 @@ import {
   formatSetMetrics,
   formatWorkoutTagLabel,
 } from '../utils/workoutUtils';
+import { formatDate, t } from '../localization';
 
 type CalendarViewProps = {
   deletingWorkoutId: string | null;
@@ -29,8 +30,6 @@ type CalendarDay = {
   isCurrentMonth: boolean;
 };
 
-const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
 export function CalendarView({
   deletingWorkoutId,
   deletingRecordId,
@@ -41,6 +40,8 @@ export function CalendarView({
   onDeleteRecord,
   onUpdateRecord,
 }: CalendarViewProps) {
+  const dayLabels = Array.from({ length: 7 }, (_, index) =>
+    formatDate(new Date(2024, 0, index + 1), { weekday: 'short' }));
   const newestWorkoutDate = history[0]?.completedDateKey
     ? parseDateKey(history[0].completedDateKey)
     : new Date();
@@ -141,13 +142,13 @@ export function CalendarView({
       <View style={styles.section}>
         <View style={styles.calendarHeader}>
           <Pressable onPress={() => changeMonth(-1)} style={styles.calendarNavButton}>
-            <Text style={styles.calendarNavText}>Prev</Text>
+            <Text style={styles.calendarNavText}>{t('calendar.previous')}</Text>
           </Pressable>
           <Text style={styles.calendarTitle}>
-            {visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+            {formatDate(visibleMonth, { month: 'long', year: 'numeric' })}
           </Text>
           <Pressable onPress={() => changeMonth(1)} style={styles.calendarNavButton}>
-            <Text style={styles.calendarNavText}>Next</Text>
+            <Text style={styles.calendarNavText}>{t('calendar.next')}</Text>
           </Pressable>
         </View>
 
@@ -212,18 +213,18 @@ export function CalendarView({
 
       {isLoading ? (
         <View style={styles.historyItem}>
-          <Text style={styles.emptyText}>Loading history...</Text>
+          <Text style={styles.emptyText}>{t('calendar.loadingHistory')}</Text>
         </View>
       ) : history.length === 0 ? (
         <View style={styles.historyItem}>
-          <Text style={styles.emptyText}>Saved workouts will appear here.</Text>
+          <Text style={styles.emptyText}>{t('calendar.empty')}</Text>
         </View>
       ) : selectedWorkouts.length === 0 ? (
         <View style={styles.historyItem}>
           <Text style={styles.emptyText}>
             {selectedDateKey
-              ? `No workouts on ${formatSelectedDate(selectedDateKey)}.`
-              : 'Select a day to view workouts.'}
+              ? t('calendar.noWorkoutsOn', { date: formatSelectedDate(selectedDateKey) })
+              : t('calendar.selectDay')}
           </Text>
         </View>
       ) : (
@@ -236,14 +237,14 @@ export function CalendarView({
             <View key={item.id} style={styles.historyItem}>
               <View style={styles.historyHeader}>
                 <Pressable
-                  accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${workoutTitle}`}
+                  accessibilityLabel={t(isExpanded ? 'actions.collapse' : 'actions.expand', { name: workoutTitle })}
                   accessibilityRole="button"
                   onPress={() => toggleWorkoutExpanded(item.id)}
                   style={styles.historyHeaderButton}
                 >
                   <View style={styles.historyTitleBlock}>
                     {item.tags.length === 0 ? (
-                      <Text style={styles.workoutTagPlaceholder}>No tags</Text>
+                      <Text style={styles.workoutTagPlaceholder}>{t('calendar.noTags')}</Text>
                     ) : (
                       item.tags.map((tag) => (
                         <View key={tag.id} style={styles.workoutTagChip}>
@@ -260,7 +261,7 @@ export function CalendarView({
                   />
                 </Pressable>
                 <Pressable
-                  accessibilityLabel={`Delete ${workoutTitle}`}
+                  accessibilityLabel={t('actions.delete', { name: workoutTitle })}
                   accessibilityRole="button"
                   disabled={isDeleting || deletingWorkoutId !== null}
                   hitSlop={8}
@@ -303,7 +304,7 @@ export function CalendarView({
                           </View>
                           <View style={styles.plannerTemplateActions}>
                             <Pressable
-                              accessibilityLabel={`Edit ${exercise.exerciseName} record`}
+                              accessibilityLabel={t('record.edit', { name: exercise.exerciseName })}
                               accessibilityRole="button"
                               disabled={savingRecordId !== null || deletingRecordId !== null}
                               hitSlop={8}
@@ -312,7 +313,7 @@ export function CalendarView({
                               <Ionicons color="#215F9A" name="create-outline" size={20} />
                             </Pressable>
                             <Pressable
-                              accessibilityLabel={`Delete ${exercise.exerciseName} record`}
+                              accessibilityLabel={t('actions.delete', { name: exercise.exerciseName })}
                               accessibilityRole="button"
                               disabled={savingRecordId !== null || deletingRecordId !== null}
                               hitSlop={8}
@@ -404,7 +405,7 @@ function parseDateKey(dateKey: string) {
 }
 
 function formatSelectedDate(dateKey: string) {
-  return parseDateKey(dateKey).toLocaleDateString(undefined, {
+  return formatDate(parseDateKey(dateKey), {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

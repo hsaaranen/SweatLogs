@@ -2,7 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { styles } from '../styles';
 import { Exercise, ExerciseSetType, ExerciseTag, WorkoutTag } from '../types';
-import { EXERCISE_SET_TYPE_OPTIONS } from '../utils/workoutUtils';
+import { getExerciseSetTypeOptions } from '../utils/workoutUtils';
+import { t } from '../localization';
+import type { LanguagePreference } from '../localization';
 
 const TAG_COLOR_OPTIONS = [
   '#215F9A',
@@ -13,15 +15,8 @@ const TAG_COLOR_OPTIONS = [
   '#9AA59E',
 ];
 
-const SET_TYPE_FIELD_PREVIEWS: Record<ExerciseSetType, string[]> = {
-  Strength: ['Reps', 'Weight'],
-  Duration: ['Min', 'Sec'],
-  RepsOnly: ['Reps'],
-  Distance: ['Km'],
-  DistanceDuration: ['Km', 'Min', 'Sec'],
-};
-
 type SettingsViewProps = {
+  languagePreference: LanguagePreference;
   deletingExerciseId: string | null;
   deletingExerciseTagId: string | null;
   deletingWorkoutTagId: string | null;
@@ -62,9 +57,11 @@ type SettingsViewProps = {
   onOpenWorkoutTagDialog: () => void;
   onExportDatabase: () => void;
   onImportDatabase: () => void;
+  onChangeLanguage: (preference: LanguagePreference) => void;
 };
 
 export function SettingsView({
+  languagePreference,
   deletingExerciseId,
   deletingExerciseTagId,
   deletingWorkoutTagId,
@@ -105,14 +102,47 @@ export function SettingsView({
   onOpenWorkoutTagDialog,
   onExportDatabase,
   onImportDatabase,
+  onChangeLanguage,
 }: SettingsViewProps) {
+  const exerciseSetTypeOptions = getExerciseSetTypeOptions();
+  const setTypeFieldPreviews: Record<ExerciseSetType, string[]> = {
+    Strength: [t('record.reps'), t('record.weight')],
+    Duration: [t('record.minutes'), t('record.seconds')],
+    RepsOnly: [t('record.reps')],
+    Distance: [t('record.kilometers')],
+    DistanceDuration: [t('record.kilometers'), t('record.minutes'), t('record.seconds')],
+  };
   return (
     <>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data backup</Text>
+        <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+        <Text style={styles.databaseBackupDescription}>{t('settings.languageDescription')}</Text>
+        <View style={styles.languageOptionRow}>
+          {([
+            ['device', t('settings.deviceLanguage')],
+            ['en', t('settings.english')],
+            ['fi', t('settings.finnish')],
+          ] as const).map(([value, label]) => {
+            const isSelected = languagePreference === value;
+            return (
+              <Pressable
+                key={value}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => onChangeLanguage(value)}
+                style={[styles.languageOption, isSelected && styles.exerciseSetTypeOptionSelected]}
+              >
+                <Text style={[styles.languageOptionText, isSelected && styles.exerciseSetTypeOptionTextSelected]}>{label}</Text>
+                {isSelected && <Ionicons color="#214E3A" name="checkmark" size={15} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('settings.dataBackup')}</Text>
         <Text style={styles.databaseBackupDescription}>
-          Export all workouts, exercises, markers, focuses, and templates to a file, or restore them
-          from a previous SweatLogs backup.
+          {t('settings.backupDescription')}
         </Text>
         <View style={styles.databaseBackupActions}>
           <Pressable
@@ -122,7 +152,7 @@ export function SettingsView({
             style={[styles.databaseBackupButton, isTransferringDatabase && styles.actionButtonDisabled]}
           >
             <Ionicons color="#215F9A" name="share-outline" size={20} />
-            <Text style={styles.databaseBackupButtonText}>Export backup</Text>
+            <Text style={styles.databaseBackupButtonText}>{t('settings.exportBackup')}</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -131,33 +161,33 @@ export function SettingsView({
             style={[styles.databaseBackupButton, isTransferringDatabase && styles.actionButtonDisabled]}
           >
             <Ionicons color="#215F9A" name="download-outline" size={20} />
-            <Text style={styles.databaseBackupButtonText}>Import backup</Text>
+            <Text style={styles.databaseBackupButtonText}>{t('settings.importBackup')}</Text>
           </Pressable>
         </View>
       </View>
 
       <View style={styles.section}>
         <View style={styles.exercisePickerHeaderRow}>
-          <Text style={styles.sectionTitle}>Create exercise</Text>
+          <Text style={styles.sectionTitle}>{t('settings.createExercise')}</Text>
           <Pressable
-            accessibilityLabel="Browse all exercises"
+            accessibilityLabel={t('actions.browseItems', { items: t('common.exercises').toLowerCase() })}
             accessibilityRole="button"
             onPress={onOpenExerciseDialog}
           >
-            <Text style={styles.exercisePickerActionText}>Browse all</Text>
+            <Text style={styles.exercisePickerActionText}>{t('common.browseAll')}</Text>
           </Pressable>
         </View>
-        <Text style={styles.exerciseCreatorControlLabel}>Name</Text>
+        <Text style={styles.exerciseCreatorControlLabel}>{t('settings.name')}</Text>
         <TextInput
           value={newExerciseName}
           onChangeText={onChangeNewExerciseName}
-          placeholder="New exercise"
+          placeholder={t('settings.newExercise')}
           placeholderTextColor="#6F7A73"
           style={styles.exerciseInput}
         />
-        <Text style={styles.exerciseCreatorControlLabel}>Type</Text>
+        <Text style={styles.exerciseCreatorControlLabel}>{t('settings.type')}</Text>
         <View style={styles.exerciseSetTypeRow}>
-          {EXERCISE_SET_TYPE_OPTIONS.map((option) => {
+          {exerciseSetTypeOptions.map((option) => {
             const isSelected = option.value === newExerciseSetType;
 
             return (
@@ -192,7 +222,7 @@ export function SettingsView({
                   >
                     <Text style={styles.exerciseSetTypeSetNumberText}>1</Text>
                   </View>
-                  {SET_TYPE_FIELD_PREVIEWS[option.value].map((field, index) => (
+                  {setTypeFieldPreviews[option.value].map((field, index) => (
                     <View
                       key={field}
                       style={[
@@ -225,19 +255,19 @@ export function SettingsView({
             isCreatingExercise && styles.actionButtonDisabled,
           ]}
         >
-          <Text style={styles.addButtonText}>{isCreatingExercise ? 'Creating' : 'Create'}</Text>
+          <Text style={styles.addButtonText}>{isCreatingExercise ? t('common.creating') : t('common.create')}</Text>
         </Pressable>
       </View>
 
       <View style={styles.section}>
         <View style={styles.exercisePickerHeaderRow}>
-          <Text style={styles.sectionTitle}>Create workout focus</Text>
+          <Text style={styles.sectionTitle}>{t('settings.createFocus')}</Text>
           <Pressable
-            accessibilityLabel="Browse all workout focus"
+            accessibilityLabel={t('actions.browseItems', { items: t('data.workoutFocus').toLowerCase() })}
             accessibilityRole="button"
             onPress={onOpenWorkoutTagDialog}
           >
-            <Text style={styles.exercisePickerActionText}>Browse all</Text>
+            <Text style={styles.exercisePickerActionText}>{t('common.browseAll')}</Text>
           </Pressable>
         </View>
         <View style={styles.workoutTagColorRow}>
@@ -265,7 +295,7 @@ export function SettingsView({
           <TextInput
             value={newWorkoutTagName}
             onChangeText={onChangeNewWorkoutTagName}
-            placeholder="New workout focus"
+            placeholder={t('settings.newFocus')}
             placeholderTextColor="#6F7A73"
             style={styles.exerciseInput}
           />
@@ -274,20 +304,20 @@ export function SettingsView({
             onPress={onCreateWorkoutTag}
             style={[styles.addButton, isCreatingWorkoutTag && styles.actionButtonDisabled]}
           >
-            <Text style={styles.addButtonText}>{isCreatingWorkoutTag ? 'Creating' : 'Create'}</Text>
+            <Text style={styles.addButtonText}>{isCreatingWorkoutTag ? t('common.creating') : t('common.create')}</Text>
           </Pressable>
         </View>
       </View>
 
       <View style={styles.section}>
         <View style={styles.exercisePickerHeaderRow}>
-          <Text style={styles.sectionTitle}>Create exercise marker</Text>
+          <Text style={styles.sectionTitle}>{t('settings.createMarker')}</Text>
           <Pressable
-            accessibilityLabel="Browse all exercise markers"
+            accessibilityLabel={t('actions.browseItems', { items: t('settings.exerciseMarkers').toLowerCase() })}
             accessibilityRole="button"
             onPress={onOpenExerciseTagDialog}
           >
-            <Text style={styles.exercisePickerActionText}>Browse all</Text>
+            <Text style={styles.exercisePickerActionText}>{t('common.browseAll')}</Text>
           </Pressable>
         </View>
         <View style={styles.workoutTagColorRow}>
@@ -315,7 +345,7 @@ export function SettingsView({
           <TextInput
             value={newExerciseTagName}
             onChangeText={onChangeNewExerciseTagName}
-            placeholder="New exercise marker"
+            placeholder={t('settings.newMarker')}
             placeholderTextColor="#6F7A73"
             style={styles.exerciseInput}
           />
@@ -324,7 +354,7 @@ export function SettingsView({
             onPress={onCreateExerciseTag}
             style={[styles.addButton, isCreatingExerciseTag && styles.actionButtonDisabled]}
           >
-            <Text style={styles.addButtonText}>{isCreatingExerciseTag ? 'Creating' : 'Create'}</Text>
+            <Text style={styles.addButtonText}>{isCreatingExerciseTag ? t('common.creating') : t('common.create')}</Text>
           </Pressable>
         </View>
       </View>
@@ -338,9 +368,9 @@ export function SettingsView({
         <View style={styles.exerciseDialogOverlay}>
           <View style={styles.exerciseDialog}>
             <View style={styles.exerciseDialogHeader}>
-              <Text style={styles.exerciseDialogTitle}>Exercise Library</Text>
+              <Text style={styles.exerciseDialogTitle}>{t('settings.exerciseLibrary')}</Text>
               <Pressable
-                accessibilityLabel="Close exercise list"
+                accessibilityLabel={t('picker.closeExerciseList')}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={onCloseExerciseDialog}
@@ -354,9 +384,9 @@ export function SettingsView({
               style={styles.exerciseDialogList}
             >
               {isLoading ? (
-                <Text style={styles.emptyText}>Loading exercises...</Text>
+                <Text style={styles.emptyText}>{t('settings.loadingExercises')}</Text>
               ) : exercises.length === 0 ? (
-                <Text style={styles.emptyText}>No exercises yet.</Text>
+                <Text style={styles.emptyText}>{t('settings.noExercises')}</Text>
               ) : (
                 exercises.map((exercise) => {
                   const isDeleting = deletingExerciseId === exercise.id;
@@ -368,7 +398,7 @@ export function SettingsView({
                         <Text style={styles.exerciseOptionText}>{exercise.name}</Text>
                       </View>
                       <Pressable
-                        accessibilityLabel={`Delete ${exercise.name}`}
+                        accessibilityLabel={t('actions.delete', { name: exercise.name })}
                         accessibilityRole="button"
                         disabled={isDeleteDisabled}
                         hitSlop={8}
@@ -402,9 +432,9 @@ export function SettingsView({
         <View style={styles.exerciseDialogOverlay}>
           <View style={styles.exerciseDialog}>
             <View style={styles.exerciseDialogHeader}>
-              <Text style={styles.exerciseDialogTitle}>Workout Focus</Text>
+              <Text style={styles.exerciseDialogTitle}>{t('settings.workoutFocus')}</Text>
               <Pressable
-                accessibilityLabel="Close workout focus list"
+                accessibilityLabel={t('actions.closeList', { item: t('data.workoutFocus').toLowerCase() })}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={onCloseWorkoutTagDialog}
@@ -418,9 +448,9 @@ export function SettingsView({
               style={styles.exerciseDialogList}
             >
               {isLoading ? (
-                <Text style={styles.emptyText}>Loading workout focus...</Text>
+                <Text style={styles.emptyText}>{t('settings.loadingFocuses')}</Text>
               ) : workoutTags.length === 0 ? (
-                <Text style={styles.emptyText}>No workout focus yet.</Text>
+                <Text style={styles.emptyText}>{t('settings.noFocuses')}</Text>
               ) : (
                 workoutTags.map((tag) => {
                   const isDeleting = deletingWorkoutTagId === tag.id;
@@ -431,7 +461,7 @@ export function SettingsView({
                       <View style={[styles.workoutTagSwatch, { backgroundColor: tag.color }]} />
                       <Text style={styles.workoutTagOptionText}>{tag.name}</Text>
                       <Pressable
-                        accessibilityLabel={`Delete ${tag.name}`}
+                        accessibilityLabel={t('actions.delete', { name: tag.name })}
                         accessibilityRole="button"
                         disabled={isDeleteDisabled}
                         hitSlop={8}
@@ -465,9 +495,9 @@ export function SettingsView({
         <View style={styles.exerciseDialogOverlay}>
           <View style={styles.exerciseDialog}>
             <View style={styles.exerciseDialogHeader}>
-              <Text style={styles.exerciseDialogTitle}>Exercise Markers</Text>
+              <Text style={styles.exerciseDialogTitle}>{t('settings.exerciseMarkers')}</Text>
               <Pressable
-                accessibilityLabel="Close exercise marker list"
+                accessibilityLabel={t('actions.closeList', { item: t('data.exerciseMarker').toLowerCase() })}
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={onCloseExerciseTagDialog}
@@ -481,9 +511,9 @@ export function SettingsView({
               style={styles.exerciseDialogList}
             >
               {isLoading ? (
-                <Text style={styles.emptyText}>Loading exercise markers...</Text>
+                <Text style={styles.emptyText}>{t('settings.loadingMarkers')}</Text>
               ) : exerciseTags.length === 0 ? (
-                <Text style={styles.emptyText}>No exercise markers yet.</Text>
+                <Text style={styles.emptyText}>{t('settings.noMarkers')}</Text>
               ) : (
                 exerciseTags.map((tag) => {
                   const isDeleting = deletingExerciseTagId === tag.id;
@@ -494,7 +524,7 @@ export function SettingsView({
                       <View style={[styles.workoutTagSwatch, { backgroundColor: tag.color }]} />
                       <Text style={styles.workoutTagOptionText}>{tag.name}</Text>
                       <Pressable
-                        accessibilityLabel={`Delete ${tag.name}`}
+                        accessibilityLabel={t('actions.delete', { name: tag.name })}
                         accessibilityRole="button"
                         disabled={isDeleteDisabled}
                         hitSlop={8}

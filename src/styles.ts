@@ -477,6 +477,28 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  languageOptionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  languageOption: {
+    alignItems: 'center',
+    backgroundColor: '#F7F7F2',
+    borderColor: '#D8DED4',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  languageOptionText: {
+    color: '#54635A',
+    fontSize: 12,
+    fontWeight: '800',
+  },
   exerciseCreatorControlLabel: {
     color: '#202522',
     fontSize: 14,

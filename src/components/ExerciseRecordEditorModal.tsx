@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { styles } from '../styles';
 import { ExerciseRecordSet, ExerciseSetType } from '../types';
+import { t } from '../localization';
 
 type EditableExerciseRecord = {
   id: string;
@@ -98,10 +99,10 @@ export function ExerciseRecordEditorModal({
         <View style={styles.exerciseDialog}>
           <View style={styles.exerciseDialogHeader}>
             <Text style={styles.exerciseDialogTitle}>
-              Edit {record?.exerciseName ?? 'exercise'} record
+              {t('record.edit', { name: record?.exerciseName ?? t('data.exercise').toLowerCase() })}
             </Text>
             <Pressable
-              accessibilityLabel="Close exercise record editor"
+              accessibilityLabel={t('record.closeEditor')}
               accessibilityRole="button"
               disabled={isSaving}
               hitSlop={8}
@@ -137,7 +138,7 @@ export function ExerciseRecordEditorModal({
             style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
           >
             <Text style={styles.saveButtonText}>
-              {isSaving ? 'Saving record' : 'Save changes'}
+              {isSaving ? t('record.saving') : t('record.saveChanges')}
             </Text>
           </Pressable>
         </View>
@@ -154,23 +155,23 @@ function getInputFields(setType: ExerciseSetType): {
   switch (setType) {
     case 'Strength':
       return [
-        { field: 'reps', label: 'Reps', keyboardType: 'number-pad' },
-        { field: 'weight', label: 'Weight', keyboardType: 'decimal-pad' },
+        { field: 'reps', label: t('record.reps'), keyboardType: 'number-pad' },
+        { field: 'weight', label: t('record.weight'), keyboardType: 'decimal-pad' },
       ];
     case 'RepsOnly':
-      return [{ field: 'reps', label: 'Reps', keyboardType: 'number-pad' }];
+      return [{ field: 'reps', label: t('record.reps'), keyboardType: 'number-pad' }];
     case 'Duration':
       return [
-        { field: 'durationMinutes', label: 'Min', keyboardType: 'number-pad' },
-        { field: 'durationSeconds', label: 'Sec', keyboardType: 'number-pad' },
+        { field: 'durationMinutes', label: t('record.minutes'), keyboardType: 'number-pad' },
+        { field: 'durationSeconds', label: t('record.seconds'), keyboardType: 'number-pad' },
       ];
     case 'Distance':
-      return [{ field: 'distanceKm', label: 'Km', keyboardType: 'decimal-pad' }];
+      return [{ field: 'distanceKm', label: t('record.kilometers'), keyboardType: 'decimal-pad' }];
     case 'DistanceDuration':
       return [
-        { field: 'distanceKm', label: 'Km', keyboardType: 'decimal-pad' },
-        { field: 'durationMinutes', label: 'Min', keyboardType: 'number-pad' },
-        { field: 'durationSeconds', label: 'Sec', keyboardType: 'number-pad' },
+        { field: 'distanceKm', label: t('record.kilometers'), keyboardType: 'decimal-pad' },
+        { field: 'durationMinutes', label: t('record.minutes'), keyboardType: 'number-pad' },
+        { field: 'durationSeconds', label: t('record.seconds'), keyboardType: 'number-pad' },
       ];
   }
 }

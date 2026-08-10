@@ -3,6 +3,7 @@ import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
 import { styles } from '../styles';
 import { Exercise, ExerciseRecord, ExerciseSetType } from '../types';
+import { formatDate as formatLocalizedDate, t } from '../localization';
 
 type ExerciseProgressChartProps = {
   exercise: Exercise;
@@ -84,7 +85,7 @@ export function ExerciseProgressChart({
   if (isLoading) {
     return (
       <View onLayout={onLayout} style={styles.progressChartEmpty}>
-        <Text style={styles.emptyText}>Loading progress graph...</Text>
+        <Text style={styles.emptyText}>{t('chart.loading')}</Text>
       </View>
     );
   }
@@ -110,7 +111,7 @@ export function ExerciseProgressChart({
                 isSelected && styles.progressChartTimelineTextSelected,
               ]}
             >
-              {option.key}
+              {option.key === 'All' ? t('chart.all') : option.key}
             </Text>
           </Pressable>
         );
@@ -125,8 +126,8 @@ export function ExerciseProgressChart({
         <View style={styles.progressChartEmptyContent}>
           <Text style={styles.emptyText}>
             {records.length === 0
-              ? 'Complete a workout to see progress here.'
-              : 'No records in this timeline.'}
+              ? t('chart.completeWorkout')
+              : t('chart.noTimelineRecords')}
           </Text>
         </View>
       </View>
@@ -138,7 +139,7 @@ export function ExerciseProgressChart({
       <View onLayout={onLayout} style={styles.progressChart}>
         {timelineControls}
         <View style={styles.progressChartEmptyContent}>
-          <Text style={styles.emptyText}>Enable a line to display the graph.</Text>
+          <Text style={styles.emptyText}>{t('chart.enableLine')}</Text>
         </View>
         <ChartLegend
           hiddenSeriesKeys={hiddenSeriesKeys}
@@ -179,7 +180,7 @@ export function ExerciseProgressChart({
       <View style={styles.progressChartHeading}>
         <Text style={styles.progressChartAxisLabel}>{metric.axisLabel}</Text>
         {metric.lowerIsBetter && (
-          <Text style={styles.progressChartHint}>Lower is better</Text>
+          <Text style={styles.progressChartHint}>{t('chart.lowerBetter')}</Text>
         )}
       </View>
       <Svg height={CHART_HEIGHT} width={width}>
@@ -300,7 +301,7 @@ function ChartLegend({
         return (
           <Pressable
             key={item.key}
-            accessibilityLabel={`${isHidden ? 'Show' : 'Hide'} ${item.label}`}
+            accessibilityLabel={`${isHidden ? t('common.add') : t('common.remove')} ${item.label}`}
             accessibilityRole="button"
             onPress={() => onToggleSeries(item.key)}
             style={[
@@ -351,13 +352,13 @@ function buildMetricConfig(
     }
 
     return {
-      axisLabel: 'Weight',
+      axisLabel: t('chart.weight'),
       formatValue: (value) => `${formatNumber(value)} kg`,
       series: [...pointsByReps.entries()]
         .sort(([left], [right]) => left - right)
         .map(([reps, seriesPoints], index) => ({
           key: `reps-${reps}`,
-          label: `${reps} rep${reps === 1 ? '' : 's'}`,
+          label: `${reps} ${t(reps === 1 ? 'chart.rep' : 'chart.reps').toLowerCase()}`,
           color: SERIES_COLORS[index % SERIES_COLORS.length],
           points: seriesPoints,
         })),
@@ -390,22 +391,22 @@ function buildMetricConfig(
   switch (setType) {
     case 'Duration':
       return createSingleSeries(
-        'Time',
-        'Best duration',
+        t('chart.time'),
+        t('chart.bestDuration'),
         (record) => maxOrNull(record.sets.map((set) => set.durationSeconds)),
         formatDuration,
       );
     case 'RepsOnly':
       return createSingleSeries(
-        'Reps',
-        'Best reps',
+        t('chart.reps'),
+        t('chart.bestReps'),
         (record) => maxOrNull(record.sets.map((set) => set.reps)),
         (value) => formatNumber(value),
       );
     case 'Distance':
       return createSingleSeries(
-        'Distance',
-        'Best distance',
+        t('chart.distance'),
+        t('chart.bestDistance'),
         (record) => {
           const meters = maxOrNull(record.sets.map((set) => set.distanceMeters));
           return meters === null ? null : meters / 1000;
@@ -414,8 +415,8 @@ function buildMetricConfig(
       );
     case 'DistanceDuration':
       return createSingleSeries(
-        'Pace',
-        'Best pace',
+        t('chart.pace'),
+        t('chart.bestPace'),
         (record) => {
           const paces = record.sets.flatMap((set) =>
             set.durationSeconds !== null &&
@@ -464,7 +465,7 @@ function getRecordTimestamp(record: ExerciseRecord) {
 
 function buildDateTicks(minTimestamp: number, maxTimestamp: number) {
   const formatDate = (timestamp: number) =>
-    new Date(timestamp).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    formatLocalizedDate(new Date(timestamp), { day: 'numeric', month: 'short' });
 
   if (minTimestamp === maxTimestamp) {
     return [{ timestamp: minTimestamp, label: formatDate(minTimestamp), anchor: 'middle' as const }];

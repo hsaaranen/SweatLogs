@@ -51,6 +51,8 @@ import {
   exportDatabaseBackup,
   pickAndImportDatabaseBackup,
 } from './src/storage/databaseBackupStorage';
+import { formatDate, LanguagePreference, setLanguagePreference, t } from './src/localization';
+import { loadLanguagePreference, saveLanguagePreference } from './src/storage/languagePreferenceStorage';
 
 type RootTabParamList = {
   Workout: undefined;
@@ -70,6 +72,8 @@ export default function App() {
 }
 
 function SweatLogsApp() {
+  const [languagePreference, setLanguagePreferenceState] = useState<LanguagePreference>('device');
+  const [, setLanguageRevision] = useState(0);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [exerciseSearchText, setExerciseSearchText] = useState('');
   const [isExerciseDialogOpen, setIsExerciseDialogOpen] = useState(false);
@@ -132,6 +136,32 @@ function SweatLogsApp() {
   const noticeOpacity = useRef(new Animated.Value(0)).current;
   const plannerScrollRef = useRef<ScrollView>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+    void loadLanguagePreference().then((preference) => {
+      if (!isMounted) return;
+      setLanguagePreference(preference);
+      setLanguagePreferenceState(preference);
+      setLanguageRevision((value) => value + 1);
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  const changeLanguage = (preference: LanguagePreference) => {
+    setLanguagePreference(preference);
+    setLanguagePreferenceState(preference);
+    setLanguageRevision((value) => value + 1);
+    setHistory((current) => current.map((workout) => ({
+      ...workout,
+      completedAt: formatDate(new Date(`${workout.completedDateKey}T00:00:00`)),
+    })));
+    setExerciseRecords((current) => current.map((record) => ({
+      ...record,
+      completedAt: formatDate(new Date(`${record.completedDateKey}T00:00:00`)),
+    })));
+    void saveLanguagePreference(preference);
+  };
+
   const workoutTotals = useMemo(() => {
     const exerciseTotals = workoutExercises.map((entry) => calculateTotals(entry.sets));
 
@@ -160,7 +190,7 @@ function SweatLogsApp() {
         setWorkoutNotes(draft.workoutNotes);
         setWorkoutExercises(draft.workoutExercises);
         setExpandedWorkoutExerciseId(draft.expandedWorkoutExerciseId);
-        setNotice({ tone: 'success', message: 'Unfinished workout restored.' });
+        setNotice({ tone: 'success', message: t('messages.draftRestored') });
       } catch (error) {
         if (isMounted) {
           setNotice({
@@ -347,7 +377,7 @@ function SweatLogsApp() {
         current.map((record) => record.id === recordId ? mapExerciseRecordToData(updated) : record),
       );
       setHistory(recentWorkouts.map(mapWorkoutToHistory));
-      setNotice({ tone: 'success', message: 'Exercise record updated.' });
+      setNotice({ tone: 'success', message: t('messages.recordUpdated') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -361,12 +391,12 @@ function SweatLogsApp() {
 
   const confirmDeleteExerciseRecord = (recordId: string) => {
     Alert.alert(
-      'Delete exercise record?',
-      'This removes the exercise and all its sets from the completed workout. This cannot be undone.',
+      t('dialogs.deleteRecordTitle'),
+      t('dialogs.deleteRecordBody'),
       [
-        { text: 'Keep record', style: 'cancel' },
+        { text: t('dialogs.keepRecord'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => { void deleteExerciseRecord(recordId); },
         },
@@ -385,7 +415,7 @@ function SweatLogsApp() {
       const recentWorkouts = await gymLogsApi.getRecentWorkouts();
       setExerciseRecords((current) => current.filter((record) => record.id !== recordId));
       setHistory(recentWorkouts.map(mapWorkoutToHistory));
-      setNotice({ tone: 'success', message: 'Exercise record deleted.' });
+      setNotice({ tone: 'success', message: t('messages.recordDeleted') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -432,7 +462,7 @@ function SweatLogsApp() {
       setExercises((current) => sortExercises([...current, exercise]));
       setNewExerciseName('');
       setNewExerciseSetType(DEFAULT_EXERCISE_SET_TYPE);
-      setNotice({ tone: 'success', message: 'Exercise created.' });
+      setNotice({ tone: 'success', message: t('messages.exerciseCreated') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -454,7 +484,7 @@ function SweatLogsApp() {
       const tag = await gymLogsApi.createWorkoutTag(name, newWorkoutTagColor);
       setWorkoutTags((current) => sortWorkoutTags([...current, tag]));
       setNewWorkoutTagName('');
-      setNotice({ tone: 'success', message: 'Workout tag created.' });
+      setNotice({ tone: 'success', message: t('messages.focusCreated') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -476,7 +506,7 @@ function SweatLogsApp() {
       const tag = await gymLogsApi.createExerciseTag(name, newExerciseTagColor);
       setExerciseTags((current) => sortExerciseTags([...current, tag]));
       setNewExerciseTagName('');
-      setNotice({ tone: 'success', message: 'Exercise tag created.' });
+      setNotice({ tone: 'success', message: t('messages.markerCreated') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -556,7 +586,7 @@ function SweatLogsApp() {
       setEditingTemplateId(null);
       setNotice({
         tone: 'success',
-        message: editingTemplateId ? 'Workout template updated.' : 'Workout template saved.',
+        message: t(editingTemplateId ? 'messages.templateUpdated' : 'messages.templateSaved'),
       });
     } catch (error) {
       setNotice({
@@ -603,14 +633,14 @@ function SweatLogsApp() {
     setWorkoutNotes('');
     setExpandedWorkoutExerciseId(entries[0]?.id ?? null);
     setIsWorkoutStarted(true);
-    setNotice({ tone: 'success', message: `${template.name} loaded.` });
+    setNotice({ tone: 'success', message: t('messages.templateLoaded', { name: template.name }) });
   };
 
   const confirmDeleteWorkoutTemplate = (template: WorkoutTemplate) => {
-    Alert.alert('Delete template?', `Delete ${template.name}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('messages.deleteTemplateTitle'), t('messages.deleteTemplateBody', { name: template.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => {
           void deleteWorkoutTemplate(template.id);
@@ -631,7 +661,7 @@ function SweatLogsApp() {
       if (editingTemplateId === templateId) {
         cancelEditingWorkoutTemplate();
       }
-      setNotice({ tone: 'success', message: 'Workout template deleted.' });
+      setNotice({ tone: 'success', message: t('messages.templateDeleted') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -892,7 +922,7 @@ function SweatLogsApp() {
     setIsTransferringDatabase(true);
     try {
       await exportDatabaseBackup();
-      setNotice({ tone: 'success', message: 'Database backup exported.' });
+      setNotice({ tone: 'success', message: t('messages.backupExported') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -937,7 +967,7 @@ function SweatLogsApp() {
       setExerciseRecords([]);
       setDataExerciseTagExercises([]);
       setDataWorkoutTagWorkouts([]);
-      setNotice({ tone: 'success', message: 'Database backup imported.' });
+      setNotice({ tone: 'success', message: t('messages.backupImported') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -950,12 +980,12 @@ function SweatLogsApp() {
 
   const confirmImportBackup = () => {
     Alert.alert(
-      'Replace local data?',
-      'Importing a backup replaces all current SweatLogs data on this phone. Export your current database first if you may need it later.',
+      t('dialogs.replaceDataTitle'),
+      t('dialogs.replaceDataBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Choose backup',
+          text: t('dialogs.chooseBackup'),
           style: 'destructive',
           onPress: () => { void importBackup(); },
         },
@@ -965,17 +995,17 @@ function SweatLogsApp() {
 
   const confirmCancelWorkout = () => {
     Alert.alert(
-      'Cancel workout?',
-      'All exercises, sets, focus selections, and notes in this workout will be cleared.',
+      t('dialogs.cancelWorkoutTitle'),
+      t('dialogs.cancelWorkoutBody'),
       [
-        { text: 'Keep workout', style: 'cancel' },
+        { text: t('dialogs.keepWorkout'), style: 'cancel' },
         {
-          text: 'Cancel workout',
+          text: t('workout.cancel'),
           style: 'destructive',
           onPress: () => {
             clearActiveWorkout();
             void removeWorkoutDraft();
-            setNotice({ tone: 'success', message: 'Workout cancelled.' });
+            setNotice({ tone: 'success', message: t('messages.workoutCancelled') });
           },
         },
       ],
@@ -1004,7 +1034,7 @@ function SweatLogsApp() {
       setHistory(recentWorkouts.map(mapWorkoutToHistory));
       clearActiveWorkout();
       await removeWorkoutDraft();
-      setNotice({ tone: 'success', message: 'Workout saved.' });
+      setNotice({ tone: 'success', message: t('messages.workoutSaved') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -1017,12 +1047,12 @@ function SweatLogsApp() {
 
   const confirmDeleteWorkout = (workout: WorkoutHistory) => {
     Alert.alert(
-      'Delete workout?',
-      `Delete workout from ${workout.completedAt}? This cannot be undone.`,
+      t('messages.deleteWorkoutTitle'),
+      t('dialogs.deleteWorkoutBody', { date: workout.completedAt }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           onPress: () => {
             void deleteWorkout(workout.id);
           },
@@ -1055,12 +1085,12 @@ function SweatLogsApp() {
 
   const confirmDeleteExercise = (exercise: Exercise) => {
     Alert.alert(
-      'Delete exercise?',
-      `Remove ${exercise.name} from exercise pickers? Past workouts stay unchanged.`,
+      t('dialogs.deleteExerciseTitle'),
+      t('dialogs.deleteExerciseBody', { name: exercise.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           onPress: () => {
             void deleteExercise(exercise.id);
           },
@@ -1101,7 +1131,7 @@ function SweatLogsApp() {
         setExerciseRecords([]);
       }
 
-      setNotice({ tone: 'success', message: 'Exercise removed.' });
+      setNotice({ tone: 'success', message: t('messages.exerciseRemoved') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -1114,12 +1144,12 @@ function SweatLogsApp() {
 
   const confirmDeleteWorkoutTag = (tag: WorkoutTag) => {
     Alert.alert(
-      'Delete workout tag?',
-      `Remove ${tag.name} from workout tag pickers? Past workouts stay unchanged.`,
+      t('dialogs.deleteFocusTitle'),
+      t('dialogs.deleteFocusBody', { name: tag.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           onPress: () => {
             void deleteWorkoutTag(tag.id);
           },
@@ -1151,7 +1181,7 @@ function SweatLogsApp() {
         setDataWorkoutTagWorkouts([]);
       }
 
-      setNotice({ tone: 'success', message: 'Workout tag removed.' });
+      setNotice({ tone: 'success', message: t('messages.focusRemoved') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -1164,12 +1194,12 @@ function SweatLogsApp() {
 
   const confirmDeleteExerciseTag = (tag: ExerciseTag) => {
     Alert.alert(
-      'Delete exercise tag?',
-      `Remove ${tag.name} from exercise tag pickers? Past workouts stay unchanged.`,
+      t('dialogs.deleteMarkerTitle'),
+      t('dialogs.deleteMarkerBody', { name: tag.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           onPress: () => {
             void deleteExerciseTag(tag.id);
           },
@@ -1209,7 +1239,7 @@ function SweatLogsApp() {
         clearSelectedDataExercise();
       }
 
-      setNotice({ tone: 'success', message: 'Exercise tag removed.' });
+      setNotice({ tone: 'success', message: t('messages.markerRemoved') });
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -1225,7 +1255,7 @@ function SweatLogsApp() {
       <SafeAreaProvider>
         <SafeAreaView edges={['top', 'right', 'bottom', 'left']} style={styles.splashScreen}>
           <StatusBar style="dark" />
-          <Text style={styles.splashTitle}>SweatLogs</Text>
+          <Text style={styles.splashTitle}>{t('appName')}</Text>
         </SafeAreaView>
       </SafeAreaProvider>
     );
@@ -1260,6 +1290,7 @@ function SweatLogsApp() {
         <Tab.Navigator
           screenOptions={({ route }) => ({
             headerShown: false,
+            tabBarLabel: t(`tabs.${route.name.toLowerCase()}`),
             tabBarActiveTintColor: '#214E3A',
             tabBarInactiveTintColor: '#54635A',
             tabBarIcon: ({ color, size }) => {
@@ -1456,6 +1487,7 @@ function SweatLogsApp() {
             {() => (
               <ScrollView contentContainerStyle={styles.content}>
                 <SettingsView
+                  languagePreference={languagePreference}
                   deletingExerciseId={deletingExerciseId}
                   deletingExerciseTagId={deletingExerciseTagId}
                   deletingWorkoutTagId={deletingWorkoutTagId}
@@ -1496,6 +1528,7 @@ function SweatLogsApp() {
                   onOpenWorkoutTagDialog={openSettingsWorkoutTagDialog}
                   onExportDatabase={() => { void exportBackup(); }}
                   onImportDatabase={confirmImportBackup}
+                  onChangeLanguage={changeLanguage}
                 />
               </ScrollView>
             )}
