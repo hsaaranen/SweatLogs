@@ -24,7 +24,7 @@
   },
   "scripts": {
     "start": "expo start --go --lan",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "start:go": "expo start --go --lan"
