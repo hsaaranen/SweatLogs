@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ExerciseForm } from '../components/ExerciseForm';
 import { styles } from '../styles';
 import { Exercise, ExerciseSetType, ExerciseTag, WorkoutTag } from '../types';
-import { getExerciseSetTypeOptions } from '../utils/workoutUtils';
 import { t } from '../localization';
 import type { LanguagePreference } from '../localization';
 
@@ -34,9 +35,11 @@ type SettingsViewProps = {
   isCreatingExercise: boolean;
   isCreatingExerciseTag: boolean;
   isCreatingWorkoutTag: boolean;
+  updatingExerciseId: string | null;
   isLoading: boolean;
   isTransferringDatabase: boolean;
   newExerciseName: string;
+  newExerciseDescription: string;
   newExerciseSetType: ExerciseSetType;
   newExerciseTagColor: string;
   newExerciseTagName: string;
@@ -44,6 +47,7 @@ type SettingsViewProps = {
   newWorkoutTagName: string;
   workoutTags: WorkoutTag[];
   onChangeNewExerciseName: (value: string) => void;
+  onChangeNewExerciseDescription: (value: string) => void;
   onChangeNewExerciseSetType: (value: ExerciseSetType) => void;
   onChangeNewExerciseTagColor: (value: string) => void;
   onChangeNewExerciseTagName: (value: string) => void;
@@ -56,6 +60,7 @@ type SettingsViewProps = {
   onCreateExerciseTag: () => void;
   onCreateWorkoutTag: () => void;
   onDeleteExercise: (exercise: Exercise) => void;
+  onUpdateExercise: (exerciseId: string, name: string, description: string) => Promise<boolean>;
   onDeleteExerciseTag: (tag: ExerciseTag) => void;
   onDeleteWorkoutTag: (tag: WorkoutTag) => void;
   onOpenExerciseDialog: () => void;
@@ -66,6 +71,7 @@ type SettingsViewProps = {
   onChangeLanguage: (preference: LanguagePreference) => void;
 };
 
+/** Renders local preferences, backup controls, and editable classification libraries. */
 export function SettingsView({
   languagePreference,
   deletingExerciseId,
@@ -79,9 +85,11 @@ export function SettingsView({
   isCreatingExercise,
   isCreatingExerciseTag,
   isCreatingWorkoutTag,
+  updatingExerciseId,
   isLoading,
   isTransferringDatabase,
   newExerciseName,
+  newExerciseDescription,
   newExerciseSetType,
   newExerciseTagColor,
   newExerciseTagName,
@@ -89,6 +97,7 @@ export function SettingsView({
   newWorkoutTagName,
   workoutTags,
   onChangeNewExerciseName,
+  onChangeNewExerciseDescription,
   onChangeNewExerciseSetType,
   onChangeNewExerciseTagColor,
   onChangeNewExerciseTagName,
@@ -101,6 +110,7 @@ export function SettingsView({
   onCreateExerciseTag,
   onCreateWorkoutTag,
   onDeleteExercise,
+  onUpdateExercise,
   onDeleteExerciseTag,
   onDeleteWorkoutTag,
   onOpenExerciseDialog,
@@ -110,13 +120,32 @@ export function SettingsView({
   onImportDatabase,
   onChangeLanguage,
 }: SettingsViewProps) {
-  const exerciseSetTypeOptions = getExerciseSetTypeOptions();
-  const setTypeFieldPreviews: Record<ExerciseSetType, string[]> = {
-    Strength: [t('record.reps'), t('record.weight')],
-    Duration: [t('record.minutes'), t('record.seconds')],
-    RepsOnly: [t('record.reps')],
-    Distance: [t('record.kilometers')],
-    DistanceDuration: [t('record.kilometers'), t('record.minutes'), t('record.seconds')],
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [editExerciseName, setEditExerciseName] = useState('');
+  const [editExerciseDescription, setEditExerciseDescription] = useState('');
+
+  /** Opens the shared exercise form with an independent editable copy of the selected exercise. */
+  const openExerciseEditor = (exercise: Exercise) => {
+    setEditingExercise(exercise);
+    setEditExerciseName(exercise.name);
+    setEditExerciseDescription(exercise.description);
+  };
+
+  /** Closes the editor unless an update is currently being persisted. */
+  const closeExerciseEditor = () => {
+    if (!updatingExerciseId) {
+      setEditingExercise(null);
+    }
+  };
+
+  /** Saves editable exercise fields and closes the modal only after a successful update. */
+  const saveExerciseChanges = async () => {
+    if (!editingExercise || updatingExerciseId) {
+      return;
+    }
+    if (await onUpdateExercise(editingExercise.id, editExerciseName, editExerciseDescription)) {
+      setEditingExercise(null);
+    }
   };
   return (
     <>
@@ -182,86 +211,17 @@ export function SettingsView({
             <Text style={styles.exercisePickerActionText}>{t('common.browseAll')}</Text>
           </Pressable>
         </View>
-        <Text style={styles.exerciseCreatorControlLabel}>{t('settings.name')}</Text>
-        <TextInput
-          value={newExerciseName}
-          onChangeText={onChangeNewExerciseName}
-          placeholder={t('settings.newExercise')}
-          placeholderTextColor="#9BA1AD"
-          style={styles.exerciseInput}
+        <ExerciseForm
+          mode="create"
+          name={newExerciseName}
+          description={newExerciseDescription}
+          setType={newExerciseSetType}
+          isSubmitting={isCreatingExercise}
+          onChangeName={onChangeNewExerciseName}
+          onChangeDescription={onChangeNewExerciseDescription}
+          onChangeSetType={onChangeNewExerciseSetType}
+          onSubmit={onCreateExercise}
         />
-        <Text style={styles.exerciseCreatorControlLabel}>{t('settings.type')}</Text>
-        <View style={styles.exerciseSetTypeRow}>
-          {exerciseSetTypeOptions.map((option) => {
-            const isSelected = option.value === newExerciseSetType;
-
-            return (
-              <Pressable
-                key={option.value}
-                accessibilityLabel={`Use ${option.label} exercise set type`}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-                onPress={() => onChangeNewExerciseSetType(option.value)}
-                style={[
-                  styles.exerciseSetTypeOption,
-                  isSelected && styles.exerciseSetTypeOptionSelected,
-                ]}
-              >
-                <View style={styles.exerciseSetTypeOptionHeader}>
-                  <Text
-                    style={[
-                      styles.exerciseSetTypeOptionText,
-                      isSelected && styles.exerciseSetTypeOptionTextSelected,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                  {isSelected && <Ionicons color="#5AA7FF" name="checkmark-circle" size={18} />}
-                </View>
-                <View style={styles.exerciseSetTypePreview}>
-                  <View
-                    style={[
-                      styles.exerciseSetTypeSetNumber,
-                      isSelected && styles.exerciseSetTypeSetNumberSelected,
-                    ]}
-                  >
-                    <Text style={styles.exerciseSetTypeSetNumberText}>1</Text>
-                  </View>
-                  {setTypeFieldPreviews[option.value].map((field, index) => (
-                    <View
-                      key={field}
-                      style={[
-                        styles.exerciseSetTypeFieldPreview,
-                        isSelected && styles.exerciseSetTypeFieldPreviewSelected,
-                      ]}
-                    >
-                      <Text style={styles.exerciseSetTypeFieldOrder}>{index + 1}</Text>
-                      <Text
-                        style={[
-                          styles.exerciseSetTypeFieldText,
-                          isSelected && styles.exerciseSetTypeOptionTextSelected,
-                        ]}
-                      >
-                        {field}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Pressable
-          disabled={isCreatingExercise}
-          onPress={onCreateExercise}
-          style={[
-            styles.addButton,
-            styles.createExerciseButton,
-            isCreatingExercise && styles.actionButtonDisabled,
-          ]}
-        >
-          <Text style={styles.addButtonText}>{isCreatingExercise ? t('common.creating') : t('common.create')}</Text>
-        </Pressable>
       </View>
 
       <View style={styles.section}>
@@ -403,6 +363,16 @@ export function SettingsView({
                         <Text style={styles.exerciseOptionText}>{exercise.name}</Text>
                       </View>
                       <Pressable
+                        accessibilityLabel={t('actions.edit', { name: exercise.name })}
+                        accessibilityRole="button"
+                        disabled={updatingExerciseId !== null}
+                        hitSlop={8}
+                        onPress={() => openExerciseEditor(exercise)}
+                        style={styles.settingsExerciseDeleteButton}
+                      >
+                        <Ionicons color="#5AA7FF" name="pencil-outline" size={20} />
+                      </Pressable>
+                      <Pressable
                         accessibilityLabel={t('actions.delete', { name: exercise.name })}
                         accessibilityRole="button"
                         disabled={isDeleteDisabled}
@@ -422,6 +392,47 @@ export function SettingsView({
                     </View>
                   );
                 })
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={closeExerciseEditor}
+        transparent
+        visible={editingExercise !== null}
+      >
+        <View style={styles.exerciseDialogOverlay}>
+          <View style={styles.exerciseDialog}>
+            <View style={styles.exerciseDialogHeader}>
+              <Text style={styles.exerciseDialogTitle}>{t('settings.editExercise')}</Text>
+              <Pressable
+                accessibilityLabel={t('common.close')}
+                accessibilityRole="button"
+                disabled={updatingExerciseId !== null}
+                hitSlop={8}
+                onPress={closeExerciseEditor}
+                style={styles.exerciseDialogCloseButton}
+              >
+                <Ionicons color="#5AA7FF" name="close" size={22} />
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.exerciseDialogListContent}>
+              {editingExercise && (
+                <ExerciseForm
+                  mode="edit"
+                  name={editExerciseName}
+                  description={editExerciseDescription}
+                  setType={editingExercise.setType}
+                  isSubmitting={updatingExerciseId === editingExercise.id}
+                  onChangeName={setEditExerciseName}
+                  onChangeDescription={setEditExerciseDescription}
+                  onChangeSetType={() => undefined}
+                  onSubmit={() => { void saveExerciseChanges(); }}
+                  onCancel={closeExerciseEditor}
+                />
               )}
             </ScrollView>
           </View>

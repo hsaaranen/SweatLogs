@@ -103,6 +103,10 @@ Only fields relevant to the selected type should be shown. Invalid or incomplete
 
 - The app includes a starter exercise library.
 - Users can create and search custom exercises.
+- Users can edit an existing exercise's name and description from the exercise library.
+- An exercise's measurement type is fixed after creation to protect recorded workout data.
+- Exercises can include an optional description with instructions and reference links.
+- The workout view keeps descriptions out of the logging form and opens them from an information icon.
 - Users can create colored workout focuses and exercise markers.
 - Removing a library item hides it from future selection without altering historical workouts.
 
@@ -199,4 +203,3 @@ Android v1 is ready when:
 - Database diagram: `docs/database-schema.md`
 - Drafts and backups: `src/storage/`
 - Localization: `src/localization/`
-

@@ -1,6 +1,6 @@
 # SweatLogs database schema
 
-SweatLogs uses SQLite. This diagram represents database schema version 1, defined in [`src/data/databaseMigrations.ts`](../src/data/databaseMigrations.ts).
+SweatLogs uses SQLite. This diagram represents database schema version 2, defined in [`src/data/databaseMigrations.ts`](../src/data/databaseMigrations.ts).
 
 ```mermaid
 erDiagram
@@ -12,6 +12,7 @@ erDiagram
     EXERCISES {
         TEXT id PK
         TEXT name
+        TEXT description
         TEXT setType
         TEXT createdAt
         TEXT archivedAt "nullable"

@@ -105,6 +105,7 @@ function SweatLogsApp() {
   const [isSettingsWorkoutTagDialogOpen, setIsSettingsWorkoutTagDialogOpen] = useState(false);
   const [isSettingsExerciseTagDialogOpen, setIsSettingsExerciseTagDialogOpen] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState('');
+  const [newExerciseDescription, setNewExerciseDescription] = useState('');
   const [newExerciseSetType, setNewExerciseSetType] = useState<ExerciseSetType>(DEFAULT_EXERCISE_SET_TYPE);
   const [newWorkoutTagName, setNewWorkoutTagName] = useState('');
   const [newWorkoutTagColor, setNewWorkoutTagColor] = useState(DEFAULT_NEW_WORKOUT_TAG_COLOR);
@@ -131,6 +132,7 @@ function SweatLogsApp() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingExercise, setIsCreatingExercise] = useState(false);
+  const [updatingExerciseId, setUpdatingExerciseId] = useState<string | null>(null);
   const [isCreatingWorkoutTag, setIsCreatingWorkoutTag] = useState(false);
   const [isCreatingExerciseTag, setIsCreatingExerciseTag] = useState(false);
   const [isSavingWorkout, setIsSavingWorkout] = useState(false);
@@ -462,6 +464,7 @@ function SweatLogsApp() {
     };
   }, [notice, noticeOpacity]);
 
+  /** Creates a library exercise with its optional instructions and reference links. */
   const createExercise = async () => {
     const name = newExerciseName.trim();
     if (!name || isCreatingExercise) {
@@ -470,9 +473,14 @@ function SweatLogsApp() {
 
     setIsCreatingExercise(true);
     try {
-      const exercise = await gymLogsApi.createExercise(name, newExerciseSetType);
+      const exercise = await gymLogsApi.createExercise(
+        name,
+        newExerciseSetType,
+        newExerciseDescription,
+      );
       setExercises((current) => sortExercises([...current, exercise]));
       setNewExerciseName('');
+      setNewExerciseDescription('');
       setNewExerciseSetType(DEFAULT_EXERCISE_SET_TYPE);
       setNotice({ tone: 'success', message: t('messages.exerciseCreated') });
     } catch (error) {
@@ -924,6 +932,53 @@ function SweatLogsApp() {
     setWorkoutExercises([]);
     setExpandedWorkoutExerciseId(null);
     setIsWorkoutStarted(false);
+  };
+
+  /** Updates exercise metadata across the store and all currently loaded UI projections. */
+  const updateExercise = async (
+    exerciseId: string,
+    name: string,
+    description: string,
+  ): Promise<boolean> => {
+    if (updatingExerciseId) {
+      return false;
+    }
+
+    setUpdatingExerciseId(exerciseId);
+    try {
+      const updated = await gymLogsApi.updateExercise(exerciseId, name, description);
+      const recentWorkouts = await gymLogsApi.getRecentWorkouts();
+      setExercises((current) => sortExercises(
+        current.map((exercise) => exercise.id === exerciseId ? updated : exercise),
+      ));
+      setWorkoutExercises((current) => current.map((entry) =>
+        entry.exerciseId === exerciseId ? { ...entry, exerciseName: updated.name } : entry,
+      ));
+      setTemplateExercises((current) => current.map((entry) =>
+        entry.exercise.id === exerciseId ? { ...entry, exercise: updated } : entry,
+      ));
+      setWorkoutTemplates((current) => current.map((template) => ({
+        ...template,
+        exercises: template.exercises.map((entry) =>
+          entry.exercise.id === exerciseId ? { ...entry, exercise: updated } : entry,
+        ),
+      })));
+      setSelectedDataExercise((current) => current?.id === exerciseId ? updated : current);
+      setDataExerciseTagExercises((current) => current.map((exercise) =>
+        exercise.id === exerciseId ? updated : exercise,
+      ));
+      setHistory(recentWorkouts.map(mapWorkoutToHistory));
+      setNotice({ tone: 'success', message: t('messages.exerciseUpdated') });
+      return true;
+    } catch (error) {
+      setNotice({
+        tone: 'error',
+        message: `Could not update exercise. ${getErrorMessage(error)}`,
+      });
+      return false;
+    } finally {
+      setUpdatingExerciseId(null);
+    }
   };
 
   const exportBackup = async () => {
@@ -1524,17 +1579,20 @@ function SweatLogsApp() {
                   isExerciseTagDialogOpen={isSettingsExerciseTagDialogOpen}
                   isWorkoutTagDialogOpen={isSettingsWorkoutTagDialogOpen}
                   isCreatingExercise={isCreatingExercise}
+                  updatingExerciseId={updatingExerciseId}
                   isCreatingExerciseTag={isCreatingExerciseTag}
                   isCreatingWorkoutTag={isCreatingWorkoutTag}
                   isLoading={isLoading}
                   isTransferringDatabase={isTransferringDatabase}
                   newExerciseName={newExerciseName}
+                  newExerciseDescription={newExerciseDescription}
                   newExerciseSetType={newExerciseSetType}
                   newExerciseTagColor={newExerciseTagColor}
                   newExerciseTagName={newExerciseTagName}
                   newWorkoutTagColor={newWorkoutTagColor}
                   newWorkoutTagName={newWorkoutTagName}
                   onChangeNewExerciseName={setNewExerciseName}
+                  onChangeNewExerciseDescription={setNewExerciseDescription}
                   onChangeNewExerciseSetType={setNewExerciseSetType}
                   onChangeNewExerciseTagColor={setNewExerciseTagColor}
                   onChangeNewExerciseTagName={setNewExerciseTagName}
@@ -1547,6 +1605,7 @@ function SweatLogsApp() {
                   onCreateExerciseTag={createExerciseTag}
                   onCreateWorkoutTag={createWorkoutTag}
                   onDeleteExercise={confirmDeleteExercise}
+                  onUpdateExercise={updateExercise}
                   onDeleteExerciseTag={confirmDeleteExerciseTag}
                   onDeleteWorkoutTag={confirmDeleteWorkoutTag}
                   onOpenExerciseDialog={openSettingsExerciseDialog}

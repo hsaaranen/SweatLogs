@@ -600,6 +600,39 @@ export const styles = StyleSheet.create({
     minHeight: 46,
     paddingHorizontal: 12,
   },
+  exerciseDescriptionInput: {
+    minHeight: 96,
+    paddingTop: 12,
+  },
+  exerciseForm: {
+    gap: 10,
+  },
+  exerciseFormActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  exerciseTypeLockedText: {
+    color: '#9BA1AD',
+    fontSize: 13,
+  },
+  exerciseSetTypeOptionDisabled: {
+    opacity: 0.65,
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    borderColor: '#414A5D',
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 46,
+    paddingHorizontal: 18,
+  },
+  secondaryButtonText: {
+    color: '#DDE1E8',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   addButton: {
     alignItems: 'center',
     backgroundColor: '#2864A7',
@@ -679,6 +712,15 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 36,
     width: 36,
+  },
+  exerciseInfoBody: {
+    color: '#DDE1E8',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  exerciseInfoLink: {
+    color: '#5AA7FF',
+    textDecorationLine: 'underline',
   },
   setRow: {
     alignItems: 'center',

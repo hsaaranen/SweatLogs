@@ -1,11 +1,7 @@
 import * as SQLite from 'expo-sqlite';
-import { File, Paths } from 'expo-file-system';
 import { ExerciseSetType } from '../types';
-import {
-  getDatabaseSchemaVersion,
-  migrateDatabase,
-  supportedSchemaVersion,
-} from './databaseMigrations';
+import { migrateDatabase } from './databaseMigrations';
+import { createDatabaseImportExport, validateCurrentSchema } from './databaseImportExport';
 import {
   CreateWorkoutRequest,
   ExerciseRecordResponse,
@@ -25,6 +21,7 @@ type SQLiteDatabase = Awaited<ReturnType<typeof SQLite.openDatabaseAsync>>;
 type ExerciseRow = {
   id: string;
   name: string;
+  description: string;
   setType: ExerciseSetType;
   createdAt: string;
   archivedAt: string | null;
@@ -69,6 +66,7 @@ type WorkoutTemplateRow = {
 type WorkoutTemplateExerciseRow = {
   exerciseId: string;
   exerciseName: string | null;
+  exerciseDescription: string | null;
   setType: ExerciseSetType | null;
   setCount: number;
   sortOrder: number;
@@ -76,33 +74,6 @@ type WorkoutTemplateExerciseRow = {
 
 type CountRow = { count: number };
 type MetadataRow = { value: string };
-type TableRow = { name: string };
-type TableInfoRow = {
-  cid: number;
-  name: string;
-  type: string;
-  notnull: number;
-  dflt_value: string | null;
-  pk: number;
-};
-type ForeignKeyRow = {
-  id: number;
-  seq: number;
-  table: string;
-  from: string;
-  to: string;
-  on_update: string;
-  on_delete: string;
-  match: string;
-};
-type IndexListRow = {
-  name: string;
-  unique: number;
-  origin: string;
-  partial: number;
-};
-type IndexInfoRow = { seqno: number; cid: number; name: string | null };
-type SchemaObjectRow = { type: string; name: string; tbl_name: string; sql: string };
 
 const databaseName = 'sweatlogs.db';
 const seedVersionKey = 'starterSeedVersion';
@@ -118,12 +89,17 @@ const exerciseSetTypes: ExerciseSetType[] = [
 
 let databasePromise: Promise<SQLiteDatabase> | null = null;
 
+const { exportDatabase, importDatabase } = createDatabaseImportExport({
+  getDatabase,
+});
+
 export const localGymLogsStore = {
   getExercises,
   getWorkoutFocuses,
   getExerciseMarkers,
   getWorkoutTemplates,
   createExercise,
+  updateExercise,
   createWorkoutTag,
   createExerciseTag,
   createWorkout,
@@ -143,209 +119,6 @@ export const localGymLogsStore = {
   exportDatabase,
   importDatabase,
 };
-
-async function exportDatabase() {
-  const db = await getDatabase();
-  return db.serializeAsync();
-}
-
-async function importDatabase(serializedDatabase: Uint8Array) {
-  const importedDb = await SQLite.deserializeDatabaseAsync(serializedDatabase);
-  let migratedDatabase: Uint8Array;
-
-  try {
-    await validateDatabaseIntegrity(importedDb);
-    await validateSweatLogsIdentity(importedDb);
-    await migrateDatabase(importedDb);
-    await validateCurrentSchema(importedDb);
-    await validateDatabaseIntegrity(importedDb);
-    migratedDatabase = await importedDb.serializeAsync();
-  } finally {
-    await importedDb.closeAsync();
-  }
-
-  const currentDb = await getDatabase();
-  const currentDatabase = await currentDb.serializeAsync();
-  await currentDb.closeAsync();
-  databasePromise = null;
-
-  const databaseFile = new File(SQLite.defaultDatabaseDirectory, databaseName);
-
-  try {
-    databaseFile.create({ overwrite: true, intermediates: true });
-    databaseFile.write(migratedDatabase);
-    await getDatabase();
-  } catch (error) {
-    databasePromise = null;
-    databaseFile.create({ overwrite: true, intermediates: true });
-    databaseFile.write(currentDatabase);
-    await getDatabase();
-    throw error;
-  }
-}
-
-async function validateDatabaseIntegrity(db: SQLiteDatabase) {
-  const integrity = await db.getFirstAsync<{ integrity_check: string }>('PRAGMA integrity_check;');
-  if (integrity?.integrity_check !== 'ok') {
-    throw new Error('The selected file is not a valid SQLite database.');
-  }
-
-  const foreignKeyErrors = await db.getAllAsync('PRAGMA foreign_key_check;');
-  if (foreignKeyErrors.length > 0) {
-    throw new Error('The selected backup contains invalid linked records.');
-  }
-}
-
-async function validateSweatLogsIdentity(db: SQLiteDatabase) {
-  const tables = await db.getAllAsync<TableRow>(
-    "SELECT name FROM sqlite_master WHERE type = 'table';",
-  );
-  const tableNames = new Set(tables.map((table) => table.name));
-  const identityTables = ['app_metadata', 'exercises', 'workouts'];
-
-  if (identityTables.some((table) => !tableNames.has(table))) {
-    throw new Error('The selected database is not a SweatLogs backup.');
-  }
-
-  const version = await getDatabaseSchemaVersion(db);
-  if (!Number.isInteger(version) || version < 0) {
-    throw new Error('The selected backup has an invalid database schema version.');
-  }
-  if (version > supportedSchemaVersion) {
-    throw new Error(
-      `This backup uses database schema v${version}, but this version of SweatLogs supports up to v${supportedSchemaVersion}. Update SweatLogs before importing it.`,
-    );
-  }
-}
-
-async function validateCurrentSchema(db: SQLiteDatabase) {
-  const version = await getDatabaseSchemaVersion(db);
-  if (version !== supportedSchemaVersion) {
-    throw new Error(`The backup could not be upgraded to database schema v${supportedSchemaVersion}.`);
-  }
-
-  const [actualSchema, expectedSchema] = await Promise.all([
-    inspectDatabaseSchema(db),
-    getExpectedSchema(),
-  ]);
-  if (actualSchema !== expectedSchema) {
-    throw new Error(
-      `The backup schema does not match SweatLogs database schema v${supportedSchemaVersion}.`,
-    );
-  }
-}
-
-let expectedSchemaPromise: Promise<string> | null = null;
-
-function getExpectedSchema() {
-  if (!expectedSchemaPromise) {
-    expectedSchemaPromise = createExpectedSchema().catch((error) => {
-      expectedSchemaPromise = null;
-      throw error;
-    });
-  }
-  return expectedSchemaPromise;
-}
-
-async function createExpectedSchema() {
-  const temporaryName = `sweatlogs-schema-${Date.now()}-${Math.random().toString(36).slice(2)}.db`;
-  const db = await SQLite.openDatabaseAsync(temporaryName, undefined, Paths.cache.uri);
-
-  try {
-    await db.execAsync('PRAGMA foreign_keys = ON;');
-    await migrateDatabase(db);
-    return await inspectDatabaseSchema(db);
-  } finally {
-    try {
-      await db.closeAsync();
-    } finally {
-      await SQLite.deleteDatabaseAsync(temporaryName, Paths.cache.uri);
-    }
-  }
-}
-
-async function inspectDatabaseSchema(db: SQLiteDatabase) {
-  const tables = await db.getAllAsync<TableRow>(
-    "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name;",
-  );
-  const inspectedTables = [];
-
-  for (const { name } of tables) {
-    const identifier = quoteSqlIdentifier(name);
-    const columns = await db.getAllAsync<TableInfoRow>(`PRAGMA table_info(${identifier});`);
-    const foreignKeys = await db.getAllAsync<ForeignKeyRow>(`PRAGMA foreign_key_list(${identifier});`);
-    const indexRows = await db.getAllAsync<IndexListRow>(`PRAGMA index_list(${identifier});`);
-    const indexes = [];
-
-    for (const index of indexRows.sort((left, right) => left.name.localeCompare(right.name))) {
-      const indexColumns = await db.getAllAsync<IndexInfoRow>(
-        `PRAGMA index_info(${quoteSqlIdentifier(index.name)});`,
-      );
-      indexes.push({
-        name: index.name,
-        unique: index.unique,
-        origin: index.origin,
-        partial: index.partial,
-        columns: indexColumns
-          .sort((left, right) => left.seqno - right.seqno)
-          .map(({ cid, name: columnName }) => ({ cid, name: columnName })),
-      });
-    }
-
-    inspectedTables.push({
-      name,
-      columns: columns
-        .sort((left, right) => left.cid - right.cid)
-        .map(({ name: columnName, type, notnull, dflt_value, pk }) => ({
-          name: columnName,
-          type: type.toUpperCase(),
-          notnull,
-          defaultValue: dflt_value,
-          primaryKeyOrder: pk,
-        })),
-      foreignKeys: foreignKeys
-        .sort((left, right) => left.id - right.id || left.seq - right.seq)
-        .map(({ id, seq, table, from, to, on_update, on_delete, match }) => ({
-          id,
-          seq,
-          table,
-          from,
-          to,
-          onUpdate: on_update,
-          onDelete: on_delete,
-          match,
-        })),
-      indexes,
-    });
-  }
-
-  const otherObjects = await db.getAllAsync<SchemaObjectRow>(`
-    SELECT type, name, tbl_name, sql
-    FROM sqlite_schema
-    WHERE type IN ('index', 'view', 'trigger')
-      AND name NOT LIKE 'sqlite_%'
-      AND sql IS NOT NULL
-    ORDER BY type, name;
-  `);
-
-  return JSON.stringify({
-    tables: inspectedTables,
-    objects: otherObjects.map(({ type, name, tbl_name, sql }) => ({
-      type,
-      name,
-      table: tbl_name,
-      sql: normalizeSql(sql),
-    })),
-  });
-}
-
-function quoteSqlIdentifier(value: string) {
-  return `"${value.replaceAll('"', '""')}"`;
-}
-
-function normalizeSql(value: string) {
-  return value.replace(/\s+/g, ' ').trim();
-}
 
 async function getDatabase() {
   if (!databasePromise) {
@@ -434,7 +207,7 @@ async function runInTransaction<T>(db: SQLiteDatabase, action: () => Promise<T>)
 async function getExercises(): Promise<ExerciseResponse[]> {
   const db = await getDatabase();
   const rows = await db.getAllAsync<ExerciseRow>(
-    'SELECT id, name, setType, createdAt, archivedAt FROM exercises WHERE archivedAt IS NULL ORDER BY name',
+    'SELECT id, name, description, setType, createdAt, archivedAt FROM exercises WHERE archivedAt IS NULL ORDER BY name',
   );
   return rows.map(mapExerciseRow);
 }
@@ -455,9 +228,15 @@ async function getExerciseMarkers(): Promise<ExerciseTagResponse[]> {
   return rows.map(mapTagRow);
 }
 
-async function createExercise(name: string, setType: ExerciseSetType): Promise<ExerciseResponse> {
+/** Creates an exercise with optional instructions or reference links. */
+async function createExercise(
+  name: string,
+  setType: ExerciseSetType,
+  description: string = '',
+): Promise<ExerciseResponse> {
   const db = await getDatabase();
   const trimmedName = name.trim();
+  const trimmedDescription = description.trim();
   const normalizedSetType = normalizeSetType(setType);
 
   if (!trimmedName) {
@@ -465,6 +244,9 @@ async function createExercise(name: string, setType: ExerciseSetType): Promise<E
   }
   if (trimmedName.length > 120) {
     throw new Error('Exercise name must be 120 characters or fewer.');
+  }
+  if (trimmedDescription.length > 2000) {
+    throw new Error('Exercise description must be 2000 characters or fewer.');
   }
   if (!normalizedSetType) {
     throw new Error('Exercise set type is invalid.');
@@ -476,18 +258,67 @@ async function createExercise(name: string, setType: ExerciseSetType): Promise<E
   const row: ExerciseRow = {
     id: createId(),
     name: trimmedName,
+    description: trimmedDescription,
     setType: normalizedSetType,
     createdAt: new Date().toISOString(),
     archivedAt: null,
   };
   await db.runAsync(
-    'INSERT INTO exercises (id, name, setType, createdAt, archivedAt) VALUES (?, ?, ?, ?, NULL)',
+    'INSERT INTO exercises (id, name, description, setType, createdAt, archivedAt) VALUES (?, ?, ?, ?, ?, NULL)',
     row.id,
     row.name,
+    row.description,
     row.setType,
     row.createdAt,
   );
   return mapExerciseRow(row);
+}
+
+/** Updates an exercise's editable metadata while preserving its original set type. */
+async function updateExercise(
+  exerciseId: string,
+  name: string,
+  description: string = '',
+): Promise<ExerciseResponse> {
+  const db = await getDatabase();
+  const existing = await getExerciseById(db, exerciseId);
+  const trimmedName = name.trim();
+  const trimmedDescription = description.trim();
+
+  if (!existing || existing.archivedAt) {
+    throw new Error('Exercise was not found.');
+  }
+  if (!trimmedName) {
+    throw new Error('Exercise name is required.');
+  }
+  if (trimmedName.length > 120) {
+    throw new Error('Exercise name must be 120 characters or fewer.');
+  }
+  if (trimmedDescription.length > 2000) {
+    throw new Error('Exercise description must be 2000 characters or fewer.');
+  }
+
+  const duplicate = await db.getFirstAsync<{ id: string }>(
+    'SELECT id FROM exercises WHERE name = ? COLLATE NOCASE AND archivedAt IS NULL AND id <> ?',
+    trimmedName,
+    exerciseId,
+  );
+  if (duplicate) {
+    throw new Error('An exercise with this name already exists.');
+  }
+
+  await db.runAsync(
+    'UPDATE exercises SET name = ?, description = ? WHERE id = ?',
+    trimmedName,
+    trimmedDescription,
+    exerciseId,
+  );
+
+  return mapExerciseRow({
+    ...existing,
+    name: trimmedName,
+    description: trimmedDescription,
+  });
 }
 
 async function createWorkoutTag(name: string, color: string): Promise<WorkoutTagResponse> {
@@ -700,7 +531,7 @@ async function getExerciseTagExercises(exerciseTagId: string): Promise<ExerciseR
   }
 
   const rows = await db.getAllAsync<ExerciseRow>(
-    `SELECT DISTINCT exercises.id, exercises.name, exercises.setType, exercises.createdAt, exercises.archivedAt
+    `SELECT DISTINCT exercises.id, exercises.name, exercises.description, exercises.setType, exercises.createdAt, exercises.archivedAt
      FROM workout_exercise_exercise_markers
      INNER JOIN workout_exercises ON workout_exercises.id = workout_exercise_exercise_markers.workoutExerciseId
      INNER JOIN exercises ON exercises.id = workout_exercises.exerciseId
@@ -1159,6 +990,7 @@ async function mapWorkoutTemplate(
   const exercises = await db.getAllAsync<WorkoutTemplateExerciseRow>(
     `SELECT workout_template_exercises.exerciseId,
             exercises.name AS exerciseName,
+            exercises.description AS exerciseDescription,
             exercises.setType AS setType,
             workout_template_exercises.setCount,
             workout_template_exercises.sortOrder
@@ -1178,6 +1010,7 @@ async function mapWorkoutTemplate(
       exercise: {
         id: exercise.exerciseId,
         name: exercise.exerciseName ?? 'Unknown exercise',
+        description: exercise.exerciseDescription ?? '',
         setType: exercise.setType ?? 'Strength',
       },
       setCount: exercise.setCount,
@@ -1246,7 +1079,7 @@ async function getActiveTagById(
 
 async function getExerciseById(db: SQLiteDatabase, exerciseId: string) {
   return db.getFirstAsync<ExerciseRow>(
-    'SELECT id, name, setType, createdAt, archivedAt FROM exercises WHERE id = ?',
+    'SELECT id, name, description, setType, createdAt, archivedAt FROM exercises WHERE id = ?',
     exerciseId,
   );
 }
@@ -1439,10 +1272,12 @@ function hasValue(value: number | null | undefined) {
   return value !== null && value !== undefined;
 }
 
+/** Maps a persisted exercise, including its optional instructions, to the public data shape. */
 function mapExerciseRow(row: ExerciseRow): ExerciseResponse {
   return {
     id: row.id,
     name: row.name,
+    description: row.description,
     setType: row.setType,
   };
 }

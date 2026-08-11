@@ -12,6 +12,7 @@ export type Notice = {
 export type Exercise = {
   id: string;
   name: string;
+  description: string;
   setType: ExerciseSetType;
 };
 

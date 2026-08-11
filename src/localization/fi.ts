@@ -17,6 +17,7 @@ export const fi: TranslationTable = {
     noFocusAvailable: 'Treenin painotuksia ei ole saatavilla.', clearMarkers: 'Tyhjennä merkinnät',
     noMarkersAvailable: 'Liikemerkintöjä ei ole saatavilla.', focusDialog: 'Treenin painotus',
     markersFor: 'Liikkeen {name} merkinnät', untagged: 'Luokittelematon treeni',
+    exerciseInfo: 'Liikkeen tiedot', noExerciseDescription: 'Kuvausta ei ole lisätty.',
   },
   planner: {
     createTemplate: 'Luo treenipohja', editTemplate: 'Muokkaa treenipohjaa', templateName: 'Pohjan nimi', addExercise: 'Lisää liike',
@@ -28,7 +29,7 @@ export const fi: TranslationTable = {
     language: 'Kieli', languageDescription: 'Valitse SweatLogsin käyttämä kieli.', english: 'Englanti', finnish: 'Suomi',
     dataBackup: 'Tietojen varmuuskopiointi', backupDescription: 'Luo harjoitustietokannasta varmuuskopio tai korvaa nykyisettiedot aijemmalla varmuuskopiolla.',
     exportBackup: 'Luo varmuuskopio', importBackup: 'Avaa varmuuskopio', createExercise: 'Luo liike', name: 'Nimi',
-    newExercise: 'Uusi liike', type: 'Tyyppi', createFocus: 'Luo treenin painotus', newFocus: 'Uusi treenin painotus',
+    newExercise: 'Uusi liike', editExercise: 'Muokkaa liikettä', saveExerciseChanges: 'Tallenna muutokset', exerciseTypeLocked: 'Liikkeen tyyppiä ei voi muuttaa luomisen jälkeen.', description: 'Kuvaus', exerciseDescriptionPlaceholder: 'Ohjeet tai viitelinkki', type: 'Tyyppi', createFocus: 'Luo treenin painotus', newFocus: 'Uusi treenin painotus',
     createMarker: 'Luo liikemerkintä', newMarker: 'Uusi liikemerkintä', exerciseLibrary: 'Liikekirjasto',
     loadingExercises: 'Ladataan liikkeitä...', noExercises: 'Liikkeitä ei ole vielä.', workoutFocus: 'Treenin painotus',
     loadingFocuses: 'Ladataan painotuksia...', noFocuses: 'Treenin painotuksia ei ole vielä.', exerciseMarkers: 'Liikemerkinnät',
@@ -70,7 +71,7 @@ export const fi: TranslationTable = {
   messages: {
     genericError: 'Jokin meni vikaan.', templateDeleted: 'Treenipohja poistettu.', workoutSaved: 'Treeni tallennettu.',
     workoutDeleted: 'Treeni poistettu.', recordUpdated: 'Liiketulos päivitetty.', recordDeleted: 'Liiketulos poistettu.',
-    exerciseCreated: 'Liike luotu.', focusCreated: 'Treenin painotus luotu.', markerCreated: 'Liikemerkintä luotu.',
+    exerciseCreated: 'Liike luotu.', exerciseUpdated: 'Liike päivitetty.', focusCreated: 'Treenin painotus luotu.', markerCreated: 'Liikemerkintä luotu.',
     exerciseDeleted: 'Liike poistettu.', focusDeleted: 'Treenin painotus poistettu.', markerDeleted: 'Liikemerkintä poistettu.',
     backupExported: 'Tietokannan varmuuskopio viety.', backupImported: 'Tietokannan varmuuskopio tuotu.',
     draftRestored: 'Keskeneräinen treeni palautettu.', templateSaved: 'Treenipohja tallennettu.', templateUpdated: 'Treenipohja päivitetty.',

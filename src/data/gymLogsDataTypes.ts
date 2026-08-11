@@ -3,6 +3,7 @@ import { ExerciseSetType } from '../types';
 export type ExerciseResponse = {
   id: string;
   name: string;
+  description: string;
   setType: ExerciseSetType;
 };
 

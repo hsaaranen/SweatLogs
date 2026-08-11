@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { ExerciseSearchPicker } from '../components/ExerciseSearchPicker';
 import { styles } from '../styles';
 import {
@@ -67,6 +67,7 @@ type SetInputField = {
   keyboardType: 'number-pad' | 'decimal-pad';
 };
 
+/** Renders the active workout editor and its supporting selection and information dialogs. */
 export function WorkoutView({
   exerciseSearchText,
   exercises,
@@ -105,6 +106,7 @@ export function WorkoutView({
   const [isWorkoutTagPickerOpen, setIsWorkoutTagPickerOpen] = useState(false);
   const [exerciseTagPickerWorkoutExerciseId, setExerciseTagPickerWorkoutExerciseId] =
     useState<string | null>(null);
+  const [exerciseInfoId, setExerciseInfoId] = useState<string | null>(null);
   const selectedWorkoutTags = useMemo(
     () => workoutTags.filter((tag) => selectedWorkoutTagIds.includes(tag.id)),
     [selectedWorkoutTagIds, workoutTags],
@@ -113,6 +115,7 @@ export function WorkoutView({
     (entry) => entry.id === exerciseTagPickerWorkoutExerciseId,
   );
   const selectedExerciseTagPickerIds = selectedExerciseTagPickerEntry?.selectedExerciseTagIds ?? [];
+  const exerciseInfo = exercises.find((exercise) => exercise.id === exerciseInfoId) ?? null;
 
   return (
     <>
@@ -183,6 +186,9 @@ export function WorkoutView({
             entry.selectedExerciseTagIds.includes(tag.id),
           );
           const inputFields = getSetInputFields(entry.setType);
+          const hasDescription = Boolean(
+            exercises.find((exercise) => exercise.id === entry.exerciseId)?.description?.trim(),
+          );
 
           return (
             <View key={entry.id} style={styles.workoutExercise}>
@@ -202,6 +208,17 @@ export function WorkoutView({
                     size={22}
                   />
                 </Pressable>
+                {hasDescription && (
+                  <Pressable
+                    accessibilityLabel={t('workout.exerciseInfo')}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={() => setExerciseInfoId(entry.exerciseId)}
+                    style={styles.workoutExerciseDataButton}
+                  >
+                    <Ionicons color="#5AA7FF" name="information-circle-outline" size={21} />
+                  </Pressable>
+                )}
                 <Pressable
                   accessibilityLabel={t('actions.viewExerciseData', { name: entry.exerciseName })}
                   accessibilityRole="button"
@@ -435,6 +452,39 @@ export function WorkoutView({
 
       <Modal
         animationType="fade"
+        onRequestClose={() => setExerciseInfoId(null)}
+        transparent
+        visible={exerciseInfo !== null}
+      >
+        <View style={styles.exerciseDialogOverlay}>
+          <View style={styles.exerciseDialog}>
+            <View style={styles.exerciseDialogHeader}>
+              <Text style={styles.exerciseDialogTitle}>
+                {exerciseInfo?.name ?? t('workout.exerciseInfo')}
+              </Text>
+              <Pressable
+                accessibilityLabel={t('common.close')}
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => setExerciseInfoId(null)}
+                style={styles.exerciseDialogCloseButton}
+              >
+                <Ionicons color="#5AA7FF" name="close" size={22} />
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.exerciseDialogListContent}>
+              {exerciseInfo?.description ? (
+                <ExerciseDescriptionText description={exerciseInfo.description} />
+              ) : (
+                <Text style={styles.emptyText}>{t('workout.noExerciseDescription')}</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
         onRequestClose={() => setExerciseTagPickerWorkoutExerciseId(null)}
         transparent
         visible={Boolean(selectedExerciseTagPickerEntry)}
@@ -503,6 +553,26 @@ export function WorkoutView({
         </View>
       </Modal>
     </>
+  );
+}
+
+/** Renders free-form exercise instructions while making embedded web links tappable. */
+function ExerciseDescriptionText({ description }: { description: string }) {
+  return (
+    <Text selectable style={styles.exerciseInfoBody}>
+      {description.split(/(https?:\/\/[^\s]+)/g).map((part, index) =>
+        /^https?:\/\//.test(part) ? (
+          <Text
+            key={`${part}-${index}`}
+            accessibilityRole="link"
+            onPress={() => { void Linking.openURL(part); }}
+            style={styles.exerciseInfoLink}
+          >
+            {part}
+          </Text>
+        ) : part,
+      )}
+    </Text>
   );
 }
 

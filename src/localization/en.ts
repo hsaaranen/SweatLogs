@@ -15,6 +15,7 @@ export const en = {
     cancel: 'Cancel workout', clearFocus: 'Clear focus', noFocusAvailable: 'No workout focus available.',
     clearMarkers: 'Clear markers', noMarkersAvailable: 'No exercise markers available.',
     focusDialog: 'Workout focus', markersFor: 'Exercise markers for {name}', untagged: 'Untagged workout',
+    exerciseInfo: 'Exercise information', noExerciseDescription: 'No description has been added.',
   },
   planner: {
     createTemplate: 'Create workout template', editTemplate: 'Edit workout template', templateName: 'Template name',
@@ -26,7 +27,7 @@ export const en = {
     language: 'Language', languageDescription: 'Choose the language used by SweatLogs.', english: 'English', finnish: 'Finnish',
     dataBackup: 'Data backup', backupDescription: 'Export a complete database backup or replace local data from a previous backup.',
     exportBackup: 'Export backup', importBackup: 'Import backup', createExercise: 'Create exercise', name: 'Name',
-    newExercise: 'New exercise', type: 'Type', createFocus: 'Create workout focus', newFocus: 'New workout focus',
+    newExercise: 'New exercise', editExercise: 'Edit exercise', saveExerciseChanges: 'Save changes', exerciseTypeLocked: 'Exercise type cannot be changed after creation.', description: 'Description', exerciseDescriptionPlaceholder: 'Instructions or reference link', type: 'Type', createFocus: 'Create workout focus', newFocus: 'New workout focus',
     createMarker: 'Create exercise marker', newMarker: 'New exercise marker', exerciseLibrary: 'Exercise Library',
     loadingExercises: 'Loading exercises...', noExercises: 'No exercises yet.', workoutFocus: 'Workout Focus',
     loadingFocuses: 'Loading workout focus...', noFocuses: 'No workout focus yet.', exerciseMarkers: 'Exercise Markers',
@@ -74,7 +75,7 @@ export const en = {
   messages: {
     genericError: 'Something went wrong.', templateDeleted: 'Workout template deleted.', workoutSaved: 'Workout saved.',
     workoutDeleted: 'Workout deleted.', recordUpdated: 'Exercise record updated.', recordDeleted: 'Exercise record deleted.',
-    exerciseCreated: 'Exercise created.', focusCreated: 'Workout focus created.', markerCreated: 'Exercise marker created.',
+    exerciseCreated: 'Exercise created.', exerciseUpdated: 'Exercise updated.', focusCreated: 'Workout focus created.', markerCreated: 'Exercise marker created.',
     exerciseDeleted: 'Exercise deleted.', focusDeleted: 'Workout focus deleted.', markerDeleted: 'Exercise marker deleted.',
     backupExported: 'Database backup exported.', backupImported: 'Database backup imported.',
     draftRestored: 'Unfinished workout restored.', templateSaved: 'Workout template saved.', templateUpdated: 'Workout template updated.',

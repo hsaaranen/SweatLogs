@@ -112,6 +112,13 @@ const migrations: readonly DatabaseMigration[] = [
       CREATE INDEX IF NOT EXISTS ix_workout_templates_name ON workout_templates(name);
     `);
   },
+  // Schema v2 adds optional exercise instructions without changing existing records.
+  async (db) => {
+    await db.execAsync(`
+      ALTER TABLE exercises
+      ADD COLUMN description TEXT NOT NULL DEFAULT '';
+    `);
+  },
 ];
 
 export const supportedSchemaVersion = migrations.length;
@@ -144,4 +151,3 @@ export async function migrateDatabase(db: SQLiteDatabase) {
 
   return { fromVersion: originalVersion, toVersion: supportedSchemaVersion };
 }
-
