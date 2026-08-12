@@ -1169,6 +1169,13 @@ export const styles = StyleSheet.create({
   plannerExerciseList: {
     gap: 8,
   },
+  plannerExerciseEditor: {
+    gap: 8,
+  },
+  plannerPlannedSets: {
+    gap: 8,
+    paddingHorizontal: 4,
+  },
   plannerExerciseRow: {
     alignItems: 'center',
     backgroundColor: '#181D29',

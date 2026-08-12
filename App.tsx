@@ -560,7 +560,7 @@ function SweatLogsApp() {
     setTemplateExercises((current) =>
       current.some((item) => item.exercise.id === exercise.id)
         ? current
-        : [...current, { exercise, setCount: 3 }],
+        : [...current, { exercise, setCount: 3, sets: createDefaultSets() }],
     );
     setTemplateExerciseSearchText('');
     setIsTemplateExerciseDialogOpen(false);
@@ -584,7 +584,7 @@ function SweatLogsApp() {
     try {
       const exercises = templateExercises.map((item) => ({
         exerciseId: item.exercise.id,
-        setCount: item.setCount,
+        sets: item.sets,
       }));
       const template = editingTemplateId
         ? await gymLogsApi.updateWorkoutTemplate(
@@ -622,7 +622,10 @@ function SweatLogsApp() {
     setEditingTemplateId(template.id);
     setTemplateName(template.name);
     setTemplateTagIds(template.tags.map((tag) => tag.id));
-    setTemplateExercises(template.exercises.map((item) => ({ ...item })));
+    setTemplateExercises(template.exercises.map((item) => ({
+      ...item,
+      sets: item.sets.map((set) => ({ ...set, id: createId() })),
+    })));
     setTemplateExerciseSearchText('');
     setIsTemplateExerciseDialogOpen(false);
     requestAnimationFrame(() => {
@@ -639,13 +642,13 @@ function SweatLogsApp() {
   };
 
   const loadWorkoutTemplate = (template: WorkoutTemplate) => {
-    const entries = template.exercises.map(({ exercise, setCount }) => ({
+    const entries = template.exercises.map(({ exercise, sets }) => ({
       id: createId(),
       exerciseId: exercise.id,
       exerciseName: exercise.name,
       setType: exercise.setType,
       selectedExerciseTagIds: [],
-      sets: createDefaultSets(setCount),
+      sets: sets.map((set) => ({ ...set, id: createId() })),
     }));
 
     setWorkoutExercises(entries);
@@ -1472,8 +1475,28 @@ function SweatLogsApp() {
                   onUpdateSetCount={(exerciseId, setCount) =>
                     setTemplateExercises((current) =>
                       current.map((item) =>
-                        item.exercise.id === exerciseId ? { ...item, setCount } : item,
+                        item.exercise.id === exerciseId
+                          ? {
+                              ...item,
+                              setCount,
+                              sets: setCount > item.sets.length
+                                ? [...item.sets, ...createDefaultSets(setCount - item.sets.length)]
+                                : item.sets.slice(0, setCount),
+                            }
+                          : item,
                       ),
+                    )
+                  }
+                  onUpdateSet={(exerciseId, setId, field, value) =>
+                    setTemplateExercises((current) =>
+                      current.map((item) => item.exercise.id === exerciseId
+                        ? {
+                            ...item,
+                            sets: item.sets.map((set) =>
+                              set.id === setId ? { ...set, [field]: value } : set,
+                            ),
+                          }
+                        : item),
                     )
                   }
                   onSave={() => {

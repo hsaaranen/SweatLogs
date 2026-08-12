@@ -113,7 +113,8 @@ Only fields relevant to the selected type should be shown. Invalid or incomplete
 ### Workout templates
 
 - Users can create, edit, load, and delete templates.
-- A template contains a name, workout focus, ordered exercises, and planned set counts.
+- A template contains a name, workout focus, ordered exercises, and planned sets with the values supported by each exercise type.
+- Loading a template prefills its planned repetitions, weight, duration, and distance values in the workout.
 - Loading a template creates an editable workout without changing the original template.
 
 ### Calendar and data
@@ -190,7 +191,7 @@ Android v1 is ready when:
 
 - Should workouts support one focus or multiple focuses in the interface?
 - Should weight and distance units be configurable?
-- Should templates include target values, notes, and default markers?
+- Should templates include notes and default markers?
 - Should the app periodically remind users to create a backup?
 - Is iOS part of the v1 release scope?
 

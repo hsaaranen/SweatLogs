@@ -1,6 +1,6 @@
 # SweatLogs database schema
 
-SweatLogs uses SQLite. This diagram represents database schema version 2, defined in [`src/data/databaseMigrations.ts`](../src/data/databaseMigrations.ts).
+SweatLogs uses SQLite. This diagram represents database schema version 3, defined in [`src/data/databaseMigrations.ts`](../src/data/databaseMigrations.ts).
 
 ```mermaid
 erDiagram
@@ -86,6 +86,16 @@ erDiagram
         INTEGER setCount
     }
 
+    WORKOUT_TEMPLATE_SETS {
+        TEXT id PK
+        TEXT workoutTemplateExerciseId FK
+        INTEGER setNumber
+        INTEGER reps "nullable"
+        REAL weight "nullable"
+        INTEGER durationSeconds "nullable"
+        REAL distanceMeters "nullable"
+    }
+
     WORKOUTS ||--o{ WORKOUT_EXERCISES : contains
     EXERCISES ||--o{ WORKOUT_EXERCISES : records
     WORKOUT_EXERCISES ||--o{ WORKOUT_SETS : contains
@@ -98,6 +108,7 @@ erDiagram
 
     WORKOUT_TEMPLATES ||--o{ WORKOUT_TEMPLATE_EXERCISES : contains
     EXERCISES ||--o{ WORKOUT_TEMPLATE_EXERCISES : references
+    WORKOUT_TEMPLATE_EXERCISES ||--o{ WORKOUT_TEMPLATE_SETS : contains
 
     WORKOUT_TEMPLATES ||--o{ WORKOUT_TEMPLATE_WORKOUT_FOCUSES : classified_by
     WORKOUT_FOCUSES ||--o{ WORKOUT_TEMPLATE_WORKOUT_FOCUSES : assigned_to

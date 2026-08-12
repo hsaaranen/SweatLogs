@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { ExerciseSetType } from '../types';
+import { ExerciseSetType, WorkoutSet } from '../types';
 import { migrateDatabase } from './databaseMigrations';
 import { createDatabaseImportExport, validateCurrentSchema } from './databaseImportExport';
 import {
@@ -64,6 +64,7 @@ type WorkoutTemplateRow = {
 };
 
 type WorkoutTemplateExerciseRow = {
+  templateExerciseId: string;
   exerciseId: string;
   exerciseName: string | null;
   exerciseDescription: string | null;
@@ -118,6 +119,11 @@ export const localGymLogsStore = {
   deleteWorkoutTemplate,
   exportDatabase,
   importDatabase,
+};
+
+type WorkoutTemplateExerciseInput = {
+  exerciseId: string;
+  sets: WorkoutSet[];
 };
 
 async function getDatabase() {
@@ -696,7 +702,7 @@ async function getWorkoutTemplates(): Promise<WorkoutTemplateResponse[]> {
 async function createWorkoutTemplate(
   name: string,
   tagIds: string[],
-  exercises: { exerciseId: string; setCount: number }[],
+  exercises: WorkoutTemplateExerciseInput[],
 ): Promise<WorkoutTemplateResponse> {
   const db = await getDatabase();
   const trimmedName = validateTemplateInput(name, tagIds, exercises, false);
@@ -733,7 +739,7 @@ async function updateWorkoutTemplate(
   workoutTemplateId: string,
   name: string,
   tagIds: string[],
-  exercises: { exerciseId: string; setCount: number }[],
+  exercises: WorkoutTemplateExerciseInput[],
 ): Promise<WorkoutTemplateResponse> {
   const db = await getDatabase();
   const trimmedName = validateTemplateInput(name, tagIds, exercises, true);
@@ -786,7 +792,7 @@ async function replaceTemplateRelations(
   db: SQLiteDatabase,
   templateId: string,
   tagIds: string[],
-  exercises: { exerciseId: string; setCount: number }[],
+  exercises: WorkoutTemplateExerciseInput[],
 ) {
   for (const tagId of tagIds) {
     await db.runAsync(
@@ -798,23 +804,40 @@ async function replaceTemplateRelations(
 
   for (let index = 0; index < exercises.length; index += 1) {
     const exercise = exercises[index];
+    const templateExerciseId = createId();
     await db.runAsync(
       `INSERT INTO workout_template_exercises
        (id, workoutTemplateId, exerciseId, sortOrder, setCount)
        VALUES (?, ?, ?, ?, ?)`,
-      createId(),
+      templateExerciseId,
       templateId,
       exercise.exerciseId,
       index + 1,
-      exercise.setCount,
+      exercise.sets.length,
     );
+
+    for (let setIndex = 0; setIndex < exercise.sets.length; setIndex += 1) {
+      const set = exercise.sets[setIndex];
+      await db.runAsync(
+        `INSERT INTO workout_template_sets
+         (id, workoutTemplateExerciseId, setNumber, reps, weight, durationSeconds, distanceMeters)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        createId(),
+        templateExerciseId,
+        setIndex + 1,
+        parseOptionalInteger(set.reps),
+        parseOptionalDecimal(set.weight),
+        parseOptionalDuration(set.durationMinutes, set.durationSeconds),
+        multiplyOptionalDecimal(set.distanceKm, 1000),
+      );
+    }
   }
 }
 
 function validateTemplateInput(
   name: string,
   tagIds: string[],
-  exercises: { exerciseId: string; setCount: number }[],
+  exercises: WorkoutTemplateExerciseInput[],
   requireFocus: boolean,
 ) {
   const trimmedName = name.trim();
@@ -833,7 +856,7 @@ function validateTemplateInput(
   if (exercises.some((exercise) => !exercise.exerciseId)) {
     throw new Error('Exercise id is required.');
   }
-  if (exercises.some((exercise) => exercise.setCount < 1 || exercise.setCount > maxWorkoutSetCount)) {
+  if (exercises.some((exercise) => exercise.sets.length < 1 || exercise.sets.length > maxWorkoutSetCount)) {
     throw new Error(`Template exercise set count must be between 1 and ${maxWorkoutSetCount}.`);
   }
   if (tagIds.some((id) => !id)) {
@@ -988,7 +1011,8 @@ async function mapWorkoutTemplate(
     template.id,
   );
   const exercises = await db.getAllAsync<WorkoutTemplateExerciseRow>(
-    `SELECT workout_template_exercises.exerciseId,
+    `SELECT workout_template_exercises.id AS templateExerciseId,
+            workout_template_exercises.exerciseId,
             exercises.name AS exerciseName,
             exercises.description AS exerciseDescription,
             exercises.setType AS setType,
@@ -1001,20 +1025,32 @@ async function mapWorkoutTemplate(
     template.id,
   );
 
-  return {
-    id: template.id,
-    name: template.name,
-    createdAt: template.createdAt,
-    tags: tags.map(mapTagRow),
-    exercises: exercises.map((exercise) => ({
+  const mappedExercises = await Promise.all(exercises.map(async (exercise) => {
+    const sets = await db.getAllAsync<WorkoutSetRow>(
+      `SELECT setNumber, reps, weight, durationSeconds, distanceMeters
+       FROM workout_template_sets
+       WHERE workoutTemplateExerciseId = ?
+       ORDER BY setNumber`,
+      exercise.templateExerciseId,
+    );
+    return {
       exercise: {
         id: exercise.exerciseId,
         name: exercise.exerciseName ?? 'Unknown exercise',
         description: exercise.exerciseDescription ?? '',
         setType: exercise.setType ?? 'Strength',
       },
-      setCount: exercise.setCount,
-    })),
+      setCount: sets.length,
+      sets: sets.map(mapTemplateSetRow),
+    };
+  }));
+
+  return {
+    id: template.id,
+    name: template.name,
+    createdAt: template.createdAt,
+    tags: tags.map(mapTagRow),
+    exercises: mappedExercises,
   };
 }
 
@@ -1036,6 +1072,45 @@ async function insertWorkoutSet(
     set.durationSeconds ?? null,
     set.distanceMeters ?? null,
   );
+}
+
+/** Maps persisted numeric targets into the editable string representation used by template forms. */
+function mapTemplateSetRow(set: WorkoutSetRow): WorkoutSet {
+  const totalSeconds = set.durationSeconds ?? 0;
+  return {
+    id: createId(),
+    reps: set.reps?.toString() ?? '',
+    weight: set.weight?.toString() ?? '',
+    durationMinutes: set.durationSeconds === null ? '' : Math.floor(totalSeconds / 60).toString(),
+    durationSeconds: set.durationSeconds === null ? '' : (totalSeconds % 60).toString(),
+    distanceKm: set.distanceMeters === null ? '' : (set.distanceMeters / 1000).toString(),
+  };
+}
+
+/** Parses an optional whole-number template target while preserving blank values as null. */
+function parseOptionalInteger(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+/** Parses an optional decimal template target while preserving blank values as null. */
+function parseOptionalDecimal(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number(value.replace(',', '.'));
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+/** Combines optional minute and second template fields into stored seconds. */
+function parseOptionalDuration(minutes: string, seconds: string) {
+  if (!minutes.trim() && !seconds.trim()) return null;
+  return (parseOptionalInteger(minutes) ?? 0) * 60 + (parseOptionalInteger(seconds) ?? 0);
+}
+
+/** Converts an optional display-unit decimal into its persisted base unit. */
+function multiplyOptionalDecimal(value: string, multiplier: number) {
+  const parsed = parseOptionalDecimal(value);
+  return parsed === null ? null : parsed * multiplier;
 }
 
 async function getActiveExercisesByIds(db: SQLiteDatabase, exerciseIds: string[]) {

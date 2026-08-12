@@ -1,4 +1,4 @@
-import { ExerciseSetType } from '../types';
+import { ExerciseSetType, WorkoutSet } from '../types';
 
 export type ExerciseResponse = {
   id: string;
@@ -27,6 +27,7 @@ export type WorkoutTemplateResponse = {
   exercises: {
     exercise: ExerciseResponse;
     setCount: number;
+    sets: WorkoutSet[];
   }[];
 };
 

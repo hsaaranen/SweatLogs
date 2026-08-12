@@ -119,6 +119,36 @@ const migrations: readonly DatabaseMigration[] = [
       ADD COLUMN description TEXT NOT NULL DEFAULT '';
     `);
   },
+  // Schema v3 stores type-specific planned values for every workout-template set.
+  async (db) => {
+    await db.execAsync(`
+      CREATE TABLE workout_template_sets (
+        id TEXT PRIMARY KEY NOT NULL,
+        workoutTemplateExerciseId TEXT NOT NULL,
+        setNumber INTEGER NOT NULL,
+        reps INTEGER NULL,
+        weight REAL NULL,
+        durationSeconds INTEGER NULL,
+        distanceMeters REAL NULL,
+        FOREIGN KEY (workoutTemplateExerciseId) REFERENCES workout_template_exercises(id) ON DELETE CASCADE
+      );
+
+      CREATE UNIQUE INDEX ix_workout_template_sets_exercise_set
+      ON workout_template_sets(workoutTemplateExerciseId, setNumber);
+
+      WITH RECURSIVE set_numbers(setNumber) AS (
+        SELECT 1
+        UNION ALL
+        SELECT setNumber + 1 FROM set_numbers WHERE setNumber < 15
+      )
+      INSERT INTO workout_template_sets
+        (id, workoutTemplateExerciseId, setNumber, reps, weight, durationSeconds, distanceMeters)
+      SELECT lower(hex(randomblob(16))), workout_template_exercises.id, set_numbers.setNumber,
+             NULL, NULL, NULL, NULL
+      FROM workout_template_exercises
+      JOIN set_numbers ON set_numbers.setNumber <= workout_template_exercises.setCount;
+    `);
+  },
 ];
 
 export const supportedSchemaVersion = migrations.length;

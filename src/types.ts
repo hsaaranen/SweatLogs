@@ -33,6 +33,7 @@ export type WorkoutTemplate = {
 export type WorkoutTemplateExercise = {
   exercise: Exercise;
   setCount: number;
+  sets: WorkoutSet[];
 };
 
 export type ExerciseTag = {

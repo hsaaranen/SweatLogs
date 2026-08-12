@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { ExerciseSearchPicker } from '../components/ExerciseSearchPicker';
 import { styles } from '../styles';
-import { Exercise, WorkoutTag, WorkoutTemplate, WorkoutTemplateExercise } from '../types';
+import { Exercise, ExerciseSetType, WorkoutSet, WorkoutTag, WorkoutTemplate, WorkoutTemplateExercise } from '../types';
 import { MAX_WORKOUT_SETS, MIN_WORKOUT_SETS } from '../utils/workoutUtils';
 import { t } from '../localization';
 
@@ -27,6 +27,7 @@ type PlannerViewProps = {
   onAddExercise: (exercise: Exercise) => void;
   onRemoveExercise: (exerciseId: string) => void;
   onUpdateSetCount: (exerciseId: string, setCount: number) => void;
+  onUpdateSet: (exerciseId: string, setId: string, field: keyof WorkoutSet, value: string) => void;
   onToggleTag: (tagId: string) => void;
   onSave: () => void;
   onCancelEdit: () => void;
@@ -54,6 +55,7 @@ export function PlannerView({
   onAddExercise,
   onRemoveExercise,
   onUpdateSetCount,
+  onUpdateSet,
   onToggleTag,
   onSave,
   onCancelEdit,
@@ -123,30 +125,50 @@ export function PlannerView({
         />
 
         <View style={styles.plannerExerciseList}>
-          {selectedExercises.map(({ exercise, setCount }, index) => (
-            <View key={exercise.id} style={styles.plannerExerciseRow}>
-              <Text style={styles.plannerExerciseOrder}>{index + 1}</Text>
-              <Text style={styles.plannerExerciseName}>{exercise.name}</Text>
-              <View style={styles.plannerSetCountControl}>
-                <Pressable
-                  disabled={setCount <= MIN_WORKOUT_SETS}
-                  onPress={() => onUpdateSetCount(exercise.id, setCount - 1)}
-                  style={styles.plannerSetCountButton}
-                >
-                  <Ionicons color="#5AA7FF" name="remove" size={18} />
-                </Pressable>
-                <Text style={styles.plannerSetCountText}>{setCount} {t('common.sets')}</Text>
-                <Pressable
-                  disabled={setCount >= MAX_WORKOUT_SETS}
-                  onPress={() => onUpdateSetCount(exercise.id, setCount + 1)}
-                  style={styles.plannerSetCountButton}
-                >
-                  <Ionicons color="#5AA7FF" name="add" size={18} />
+          {selectedExercises.map(({ exercise, setCount, sets }, index) => (
+            <View key={exercise.id} style={styles.plannerExerciseEditor}>
+              <View style={styles.plannerExerciseRow}>
+                <Text style={styles.plannerExerciseOrder}>{index + 1}</Text>
+                <Text style={styles.plannerExerciseName}>{exercise.name}</Text>
+                <View style={styles.plannerSetCountControl}>
+                  <Pressable
+                    disabled={setCount <= MIN_WORKOUT_SETS}
+                    onPress={() => onUpdateSetCount(exercise.id, setCount - 1)}
+                    style={styles.plannerSetCountButton}
+                  >
+                    <Ionicons color="#5AA7FF" name="remove" size={18} />
+                  </Pressable>
+                  <Text style={styles.plannerSetCountText}>{setCount} {t('common.sets')}</Text>
+                  <Pressable
+                    disabled={setCount >= MAX_WORKOUT_SETS}
+                    onPress={() => onUpdateSetCount(exercise.id, setCount + 1)}
+                    style={styles.plannerSetCountButton}
+                  >
+                    <Ionicons color="#5AA7FF" name="add" size={18} />
+                  </Pressable>
+                </View>
+                <Pressable onPress={() => onRemoveExercise(exercise.id)}>
+                  <Ionicons color="#FF7B7B" name="close-circle-outline" size={22} />
                 </Pressable>
               </View>
-              <Pressable onPress={() => onRemoveExercise(exercise.id)}>
-                <Ionicons color="#FF7B7B" name="close-circle-outline" size={22} />
-              </Pressable>
+              <View style={styles.plannerPlannedSets}>
+                {sets.map((set, setIndex) => (
+                  <View key={set.id} style={styles.setRow}>
+                    <Text style={styles.setNumber}>{setIndex + 1}</Text>
+                    {getSetInputFields(exercise.setType).map((field) => (
+                      <View key={field.field} style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>{field.label}</Text>
+                        <TextInput
+                          keyboardType={field.keyboardType}
+                          onChangeText={(value) => onUpdateSet(exercise.id, set.id, field.field, value)}
+                          style={styles.numberInput}
+                          value={set[field.field]}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
             </View>
           ))}
         </View>
@@ -319,4 +341,36 @@ export function PlannerView({
       </Modal>
     </>
   );
+}
+
+type TemplateSetInputField = {
+  field: keyof WorkoutSet;
+  label: string;
+  keyboardType: 'number-pad' | 'decimal-pad';
+};
+
+/** Returns the editable planned-set fields relevant to an exercise measurement type. */
+function getSetInputFields(setType: ExerciseSetType): TemplateSetInputField[] {
+  switch (setType) {
+    case 'Strength':
+      return [
+        { field: 'reps', label: t('record.reps'), keyboardType: 'number-pad' },
+        { field: 'weight', label: t('record.weight'), keyboardType: 'decimal-pad' },
+      ];
+    case 'RepsOnly':
+      return [{ field: 'reps', label: t('record.reps'), keyboardType: 'number-pad' }];
+    case 'Duration':
+      return [
+        { field: 'durationMinutes', label: t('record.minutes'), keyboardType: 'number-pad' },
+        { field: 'durationSeconds', label: t('record.seconds'), keyboardType: 'number-pad' },
+      ];
+    case 'Distance':
+      return [{ field: 'distanceKm', label: t('record.kilometers'), keyboardType: 'decimal-pad' }];
+    case 'DistanceDuration':
+      return [
+        { field: 'distanceKm', label: t('record.kilometers'), keyboardType: 'decimal-pad' },
+        { field: 'durationMinutes', label: t('record.minutes'), keyboardType: 'number-pad' },
+        { field: 'durationSeconds', label: t('record.seconds'), keyboardType: 'number-pad' },
+      ];
+  }
 }
