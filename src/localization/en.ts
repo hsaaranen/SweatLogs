@@ -10,12 +10,13 @@ export const en = {
   workout: {
     templates: 'Workout templates', loadTemplate: 'Load template', title: 'Workout', started: 'Workout started',
     focus: 'Focus:', chooseFocus: 'Choose workout focus', noFocusSelected: 'No focus selected',
-    exerciseCount: '{count} exercises', marker: 'Marker:', noMarkersSelected: 'No markers selected', sets: 'Sets',
+    exerciseCount: '{count} exercises', marker: 'Marker:', noMarkersSelected: 'No markers selected', sets: 'Sets', restTimer: 'Rest timer',
     addExercise: 'Add exercise', notes: 'Notes', save: 'Save workout', saving: 'Saving workout',
     cancel: 'Cancel workout', clearFocus: 'Clear focus', noFocusAvailable: 'No workout focus available.',
     clearMarkers: 'Clear markers', noMarkersAvailable: 'No exercise markers available.',
     focusDialog: 'Workout focus', markersFor: 'Exercise markers for {name}', untagged: 'Untagged workout',
     exerciseInfo: 'Exercise information', noExerciseDescription: 'No description has been added.',
+    restComplete: 'Rest complete', restCompleteFor: 'Time to continue {name}.', stopAlarm: 'Stop alarm',
   },
   planner: {
     createTemplate: 'Create workout template', editTemplate: 'Edit workout template', templateName: 'Template name',
@@ -70,6 +71,7 @@ export const en = {
     expand: 'Expand {name}', collapse: 'Collapse {name}', remove: 'Remove {name}', add: 'Add {name}',
     removeFromWorkout: 'Remove {name} from workout', chooseMarkers: 'Choose markers for {name}',
     removeSet: 'Remove set from {name}', addSet: 'Add set to {name}',
+    setRestTimer: 'Set rest timer for {name}', startRestTimer: 'Start rest timer for {name}', pauseRestTimer: 'Pause rest timer for {name}', resetRestTimer: 'Reset rest timer for {name}',
     viewExerciseData: 'View data for {name}',
   },
   messages: {

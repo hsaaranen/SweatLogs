@@ -1,6 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Linking, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import Constants, { AppOwnership } from 'expo-constants';
+import * as Notifications from 'expo-notifications';
+import { AppState, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { ExerciseSearchPicker } from '../components/ExerciseSearchPicker';
 import { styles } from '../styles';
 import {
@@ -17,6 +20,20 @@ import {
   MIN_WORKOUT_SETS,
 } from '../utils/workoutUtils';
 import { t } from '../localization';
+
+const REST_TIMER_CHANNEL_ID = 'rest-timers';
+const REST_TIMER_SOUND = 'rest_timer_alarm.wav';
+const IS_EXPO_GO = Constants.appOwnership === AppOwnership.Expo;
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    priority: Notifications.AndroidNotificationPriority.MAX,
+    shouldPlaySound: AppState.currentState !== 'active',
+    shouldSetBadge: false,
+    shouldShowBanner: AppState.currentState !== 'active',
+    shouldShowList: AppState.currentState !== 'active',
+  }),
+});
 
 type WorkoutViewProps = {
   exerciseSearchText: string;
@@ -116,6 +133,10 @@ export function WorkoutView({
   );
   const selectedExerciseTagPickerIds = selectedExerciseTagPickerEntry?.selectedExerciseTagIds ?? [];
   const exerciseInfo = exercises.find((exercise) => exercise.id === exerciseInfoId) ?? null;
+
+  useEffect(() => {
+    void setAudioModeAsync({ playsInSilentMode: true });
+  }, []);
 
   return (
     <>
@@ -323,6 +344,7 @@ export function WorkoutView({
                       </Pressable>
                     </View>
                   </View>
+                  <RestTimer exerciseName={entry.exerciseName} />
                 </>
               )}
             </View>
@@ -554,6 +576,202 @@ export function WorkoutView({
       </Modal>
     </>
   );
+}
+
+const DEFAULT_REST_SECONDS = 120;
+
+/** Renders an exercise-specific countdown whose duration can be typed or adjusted in 30-second steps. */
+function RestTimer({ exerciseName }: { exerciseName: string }) {
+  const [durationSeconds, setDurationSeconds] = useState(DEFAULT_REST_SECONDS);
+  const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_REST_SECONDS);
+  const [inputValue, setInputValue] = useState(formatTimerValue(DEFAULT_REST_SECONDS));
+  const [isRunning, setIsRunning] = useState(false);
+  const [isAlarmOpen, setIsAlarmOpen] = useState(false);
+  const [notificationId, setNotificationId] = useState<string | null>(null);
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const notificationGenerationRef = useRef(0);
+  const alarmPlayer = useAudioPlayer(require('../../assets/audio/rest_timer_alarm.wav'));
+
+  useEffect(() => {
+    if (!isAlarmOpen) return;
+    alarmPlayer.loop = true;
+    void alarmPlayer.seekTo(0).then(() => alarmPlayer.play());
+    return () => alarmPlayer.pause();
+  }, [alarmPlayer, isAlarmOpen]);
+
+  useEffect(() => {
+    if (!isRunning) return undefined;
+    const interval = setInterval(() => {
+      setRemainingSeconds((current) => {
+        const next = deadline === null
+          ? Math.max(0, current - 1)
+          : Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        setInputValue(formatTimerValue(next));
+        if (next === 0) {
+          setIsRunning(false);
+          setIsAlarmOpen(true);
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [deadline, isRunning]);
+
+  useEffect(() => {
+    return () => {
+      if (notificationId) void Notifications.cancelScheduledNotificationAsync(notificationId);
+    };
+  }, [notificationId]);
+
+  /** Applies typed mm:ss or seconds input, restoring the last valid duration when parsing fails. */
+  const commitTypedTime = () => {
+    const parsedSeconds = parseTimerValue(inputValue);
+    if (parsedSeconds === null) {
+      setInputValue(formatTimerValue(remainingSeconds));
+      return;
+    }
+    setIsRunning(false);
+    setDeadline(null);
+    notificationGenerationRef.current += 1;
+    void cancelTimerNotification(notificationId);
+    setNotificationId(null);
+    setDurationSeconds(parsedSeconds);
+    setRemainingSeconds(parsedSeconds);
+    setInputValue(formatTimerValue(parsedSeconds));
+  };
+
+  /** Starts, pauses, or restarts the countdown from its configured duration. */
+  const toggleTimer = () => {
+    if (remainingSeconds === 0) {
+      setRemainingSeconds(durationSeconds);
+      setInputValue(formatTimerValue(durationSeconds));
+    }
+    if (isRunning) {
+      setIsRunning(false);
+      setDeadline(null);
+      notificationGenerationRef.current += 1;
+      void cancelTimerNotification(notificationId);
+      setNotificationId(null);
+      return;
+    }
+
+    const secondsToRun = remainingSeconds === 0 ? durationSeconds : remainingSeconds;
+    setDeadline(Date.now() + secondsToRun * 1000);
+    setIsRunning(true);
+    const notificationGeneration = notificationGenerationRef.current + 1;
+    notificationGenerationRef.current = notificationGeneration;
+    void scheduleTimerNotification(exerciseName, secondsToRun).then((scheduledId) => {
+      if (notificationGenerationRef.current === notificationGeneration) {
+        setNotificationId(scheduledId);
+      } else {
+        void cancelTimerNotification(scheduledId);
+      }
+    });
+  };
+
+  /** Stops the countdown and returns it to the configured duration. */
+  const resetTimer = () => {
+    setIsRunning(false);
+    setDeadline(null);
+    notificationGenerationRef.current += 1;
+    void cancelTimerNotification(notificationId);
+    setNotificationId(null);
+    setRemainingSeconds(durationSeconds);
+    setInputValue(formatTimerValue(durationSeconds));
+  };
+
+  /** Silences the completed timer and dismisses its blocking alert. */
+  const stopAlarm = () => {
+    alarmPlayer.pause();
+    setIsAlarmOpen(false);
+    if (notificationId) void Notifications.dismissNotificationAsync(notificationId);
+    setNotificationId(null);
+  };
+
+  return (
+    <>
+      <View style={styles.restTimerRow}>
+        <Text style={styles.setControlLabel}>{t('workout.restTimer')}</Text>
+        <View style={styles.restTimerControls}>
+          <TextInput accessibilityLabel={t('actions.setRestTimer', { name: exerciseName })} keyboardType="numbers-and-punctuation" maxLength={5} onBlur={commitTypedTime} onChangeText={setInputValue} onSubmitEditing={commitTypedTime} selectTextOnFocus style={styles.restTimerInput} value={inputValue} />
+          <Pressable accessibilityLabel={t(isRunning ? 'actions.pauseRestTimer' : 'actions.startRestTimer', { name: exerciseName })} accessibilityRole="button" onPress={toggleTimer} style={styles.setStepperButton}>
+            <Ionicons color="#5AA7FF" name={isRunning ? 'pause' : 'play'} size={18} />
+          </Pressable>
+          <Pressable accessibilityLabel={t('actions.resetRestTimer', { name: exerciseName })} accessibilityRole="button" onPress={resetTimer} style={styles.setStepperButton}>
+            <Ionicons color="#5AA7FF" name="refresh" size={18} />
+          </Pressable>
+        </View>
+      </View>
+      <Modal animationType="fade" onRequestClose={stopAlarm} transparent visible={isAlarmOpen}>
+        <View style={styles.exerciseDialogOverlay}>
+          <View style={styles.timerAlarmDialog}>
+            <Ionicons color="#5AA7FF" name="alarm-outline" size={42} />
+            <Text style={styles.exerciseDialogTitle}>{t('workout.restComplete')}</Text>
+            <Text style={styles.timerAlarmBody}>{t('workout.restCompleteFor', { name: exerciseName })}</Text>
+            <Pressable accessibilityRole="button" onPress={stopAlarm} style={styles.saveButton}>
+              <Text style={styles.saveButtonText}>{t('workout.stopAlarm')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+/** Schedules the native notification that alerts after the app is backgrounded or closed. */
+async function scheduleTimerNotification(exerciseName: string, seconds: number): Promise<string | null> {
+  if (seconds <= 0) return null;
+
+  const notificationSound = IS_EXPO_GO ? 'default' : REST_TIMER_SOUND;
+  const channelId = IS_EXPO_GO ? `${REST_TIMER_CHANNEL_ID}-expo-go` : REST_TIMER_CHANNEL_ID;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync(channelId, {
+      name: t('workout.restTimer'),
+      importance: Notifications.AndroidImportance.MAX,
+      sound: notificationSound,
+      vibrationPattern: [0, 300, 200, 300],
+    });
+  }
+
+  const permission = await Notifications.requestPermissionsAsync();
+  if (!permission.granted) return null;
+
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: t('workout.restComplete'),
+      body: t('workout.restCompleteFor', { name: exerciseName }),
+      sound: notificationSound,
+      priority: Notifications.AndroidNotificationPriority.MAX,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds,
+      channelId,
+    },
+  });
+}
+
+/** Cancels a pending native timer notification when the timer is paused, reset, or edited. */
+async function cancelTimerNotification(notificationId: string | null): Promise<void> {
+  if (notificationId) await Notifications.cancelScheduledNotificationAsync(notificationId);
+}
+
+/** Formats a non-negative number of seconds as a compact mm:ss timer value. */
+function formatTimerValue(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+/** Parses either mm:ss or a plain seconds value into a non-negative duration. */
+function parseTimerValue(value: string): number | null {
+  const trimmedValue = value.trim();
+  if (/^\d+:\d{1,2}$/.test(trimmedValue)) {
+    const [minutes, seconds] = trimmedValue.split(':').map(Number);
+    return seconds < 60 ? minutes * 60 + seconds : null;
+  }
+  return /^\d+$/.test(trimmedValue) ? Number(trimmedValue) : null;
 }
 
 /** Renders free-form exercise instructions while making embedded web links tappable. */

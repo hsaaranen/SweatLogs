@@ -86,6 +86,7 @@ The app automatically saves the active workout as a draft. If the app closes, th
 - The app calculates exercise and workout totals.
 - Cancelling or deleting data requires confirmation.
 - An unfinished workout is saved and restored automatically.
+- Each exercise has a two-minute default rest timer that supports direct time entry, countdown controls, and an audible notification while the app is backgrounded.
 
 ### Exercise types
 
@@ -182,7 +183,7 @@ Android v1 is ready when:
 
 - Copy values from previous sets or workouts.
 - Reorder exercises in active workouts and templates.
-- Add rest and exercise timers.
+- Add exercise timers.
 - Highlight personal records.
 - Add date-range comparisons and summaries.
 - Consider optional CSV or JSON export.
