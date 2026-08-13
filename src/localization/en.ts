@@ -16,7 +16,8 @@ export const en = {
     clearMarkers: 'Clear markers', noMarkersAvailable: 'No exercise markers available.',
     focusDialog: 'Workout focus', markersFor: 'Exercise markers for {name}', untagged: 'Untagged workout',
     exerciseInfo: 'Exercise information', noExerciseDescription: 'No description has been added.',
-    restComplete: 'Rest complete', restCompleteFor: 'Time to continue {name}.', stopAlarm: 'Stop alarm',
+    restComplete: 'Rest complete', stopAlarm: 'Stop',
+    notificationErrorTitle: 'Timer notification unavailable', notificationErrorBody: 'Allow SweatLogs notifications in Android settings, then start the timer again.',
   },
   planner: {
     createTemplate: 'Create workout template', editTemplate: 'Edit workout template', templateName: 'Template name',
@@ -71,7 +72,7 @@ export const en = {
     expand: 'Expand {name}', collapse: 'Collapse {name}', remove: 'Remove {name}', add: 'Add {name}',
     removeFromWorkout: 'Remove {name} from workout', chooseMarkers: 'Choose markers for {name}',
     removeSet: 'Remove set from {name}', addSet: 'Add set to {name}',
-    setRestTimer: 'Set rest timer for {name}', startRestTimer: 'Start rest timer for {name}', pauseRestTimer: 'Pause rest timer for {name}', resetRestTimer: 'Reset rest timer for {name}',
+    setRestTimer: 'Set rest timer for {name}', setRestTimerMinutes: 'Set rest timer minutes for {name}', setRestTimerSeconds: 'Set rest timer seconds for {name}', startRestTimer: 'Start rest timer for {name}', pauseRestTimer: 'Pause rest timer for {name}', resetRestTimer: 'Reset rest timer for {name}',
     viewExerciseData: 'View data for {name}',
   },
   messages: {

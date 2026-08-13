@@ -17,8 +17,9 @@ export const fi: TranslationTable = {
     noFocusAvailable: 'Treenin painotuksia ei ole saatavilla.', clearMarkers: 'Tyhjennä merkinnät',
     noMarkersAvailable: 'Liikemerkintöjä ei ole saatavilla.', focusDialog: 'Treenin painotus',
     markersFor: 'Liikkeen {name} merkinnät', untagged: 'Luokittelematon treeni',
-    exerciseInfo: 'Liikkeen tiedot', noExerciseDescription: 'Kuvausta ei ole lisätty.', restTimer: 'Palautumisajastin',
-    restComplete: 'Palautumisaika päättyi', restCompleteFor: 'Jatka liikettä {name}.', stopAlarm: 'Pysäytä hälytys',
+    exerciseInfo: 'Liikkeen tiedot', noExerciseDescription: 'Kuvausta ei ole lisätty.', restTimer: 'Ajastin',
+    restComplete: 'Palautumisaika päättyi', stopAlarm: 'Pysäytä',
+    notificationErrorTitle: 'Ajastimen ilmoitus ei ole käytettävissä', notificationErrorBody: 'Salli SweatLogsin ilmoitukset Androidin asetuksissa ja käynnistä ajastin uudelleen.',
   },
   planner: {
     createTemplate: 'Luo treenipohja', editTemplate: 'Muokkaa treenipohjaa', templateName: 'Pohjan nimi', addExercise: 'Lisää liike',
@@ -68,7 +69,7 @@ export const fi: TranslationTable = {
     add: 'Lisää {name}', removeFromWorkout: 'Poista {name} treenistä', chooseMarkers: 'Valitse merkinnät liikkeelle {name}',
     removeSet: 'Poista sarja liikkeestä {name}', addSet: 'Lisää sarja liikkeeseen {name}',
     viewExerciseData: 'Näytä liikkeen {name} tiedot',
-    setRestTimer: 'Aseta liikkeen {name} palautumisaika', startRestTimer: 'Käynnistä liikkeen {name} palautumisajastin', pauseRestTimer: 'Keskeytä liikkeen {name} palautumisajastin', resetRestTimer: 'Nollaa liikkeen {name} palautumisajastin',
+    setRestTimer: 'Aseta liikkeen {name} palautumisaika', setRestTimerMinutes: 'Aseta liikkeen {name} palautumisajan minuutit', setRestTimerSeconds: 'Aseta liikkeen {name} palautumisajan sekunnit', startRestTimer: 'Käynnistä liikkeen {name} palautumisajastin', pauseRestTimer: 'Keskeytä liikkeen {name} palautumisajastin', resetRestTimer: 'Nollaa liikkeen {name} palautumisajastin',
   },
   messages: {
     genericError: 'Jokin meni vikaan.', templateDeleted: 'Treenipohja poistettu.', workoutSaved: 'Treeni tallennettu.',

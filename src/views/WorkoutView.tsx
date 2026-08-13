@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import Constants, { AppOwnership } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
-import { AppState, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, AppState, Linking, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { ExerciseSearchPicker } from '../components/ExerciseSearchPicker';
 import { styles } from '../styles';
 import {
@@ -21,7 +21,7 @@ import {
 } from '../utils/workoutUtils';
 import { t } from '../localization';
 
-const REST_TIMER_CHANNEL_ID = 'rest-timers';
+const REST_TIMER_CHANNEL_ID = 'rest-timers-v2';
 const REST_TIMER_SOUND = 'rest_timer_alarm.wav';
 const IS_EXPO_GO = Constants.appOwnership === AppOwnership.Expo;
 
@@ -584,7 +584,8 @@ const DEFAULT_REST_SECONDS = 120;
 function RestTimer({ exerciseName }: { exerciseName: string }) {
   const [durationSeconds, setDurationSeconds] = useState(DEFAULT_REST_SECONDS);
   const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_REST_SECONDS);
-  const [inputValue, setInputValue] = useState(formatTimerValue(DEFAULT_REST_SECONDS));
+  const [minutesInput, setMinutesInput] = useState(formatTimerParts(DEFAULT_REST_SECONDS).minutes);
+  const [secondsInput, setSecondsInput] = useState(formatTimerParts(DEFAULT_REST_SECONDS).seconds);
   const [isRunning, setIsRunning] = useState(false);
   const [isAlarmOpen, setIsAlarmOpen] = useState(false);
   const [notificationId, setNotificationId] = useState<string | null>(null);
@@ -606,7 +607,9 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
         const next = deadline === null
           ? Math.max(0, current - 1)
           : Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-        setInputValue(formatTimerValue(next));
+        const timerParts = formatTimerParts(next);
+        setMinutesInput(timerParts.minutes);
+        setSecondsInput(timerParts.seconds);
         if (next === 0) {
           setIsRunning(false);
           setIsAlarmOpen(true);
@@ -617,17 +620,13 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
     return () => clearInterval(interval);
   }, [deadline, isRunning]);
 
-  useEffect(() => {
-    return () => {
-      if (notificationId) void Notifications.cancelScheduledNotificationAsync(notificationId);
-    };
-  }, [notificationId]);
-
-  /** Applies typed mm:ss or seconds input, restoring the last valid duration when parsing fails. */
+  /** Applies the typed minute and second fields, restoring the prior duration when invalid. */
   const commitTypedTime = () => {
-    const parsedSeconds = parseTimerValue(inputValue);
+    const parsedSeconds = parseTimerParts(minutesInput, secondsInput);
     if (parsedSeconds === null) {
-      setInputValue(formatTimerValue(remainingSeconds));
+      const timerParts = formatTimerParts(remainingSeconds);
+      setMinutesInput(timerParts.minutes);
+      setSecondsInput(timerParts.seconds);
       return;
     }
     setIsRunning(false);
@@ -637,14 +636,18 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
     setNotificationId(null);
     setDurationSeconds(parsedSeconds);
     setRemainingSeconds(parsedSeconds);
-    setInputValue(formatTimerValue(parsedSeconds));
+    const timerParts = formatTimerParts(parsedSeconds);
+    setMinutesInput(timerParts.minutes);
+    setSecondsInput(timerParts.seconds);
   };
 
   /** Starts, pauses, or restarts the countdown from its configured duration. */
   const toggleTimer = () => {
     if (remainingSeconds === 0) {
       setRemainingSeconds(durationSeconds);
-      setInputValue(formatTimerValue(durationSeconds));
+      const timerParts = formatTimerParts(durationSeconds);
+      setMinutesInput(timerParts.minutes);
+      setSecondsInput(timerParts.seconds);
     }
     if (isRunning) {
       setIsRunning(false);
@@ -660,13 +663,19 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
     setIsRunning(true);
     const notificationGeneration = notificationGenerationRef.current + 1;
     notificationGenerationRef.current = notificationGeneration;
-    void scheduleTimerNotification(exerciseName, secondsToRun).then((scheduledId) => {
-      if (notificationGenerationRef.current === notificationGeneration) {
-        setNotificationId(scheduledId);
-      } else {
-        void cancelTimerNotification(scheduledId);
-      }
-    });
+    void scheduleTimerNotification(exerciseName, secondsToRun)
+      .then((scheduledId) => {
+        if (notificationGenerationRef.current === notificationGeneration) {
+          setNotificationId(scheduledId);
+        } else {
+          void cancelTimerNotification(scheduledId);
+        }
+      })
+      .catch(() => {
+        setIsRunning(false);
+        setDeadline(null);
+        Alert.alert(t('workout.notificationErrorTitle'), t('workout.notificationErrorBody'));
+      });
   };
 
   /** Stops the countdown and returns it to the configured duration. */
@@ -677,7 +686,9 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
     void cancelTimerNotification(notificationId);
     setNotificationId(null);
     setRemainingSeconds(durationSeconds);
-    setInputValue(formatTimerValue(durationSeconds));
+    const timerParts = formatTimerParts(durationSeconds);
+    setMinutesInput(timerParts.minutes);
+    setSecondsInput(timerParts.seconds);
   };
 
   /** Silences the completed timer and dismisses its blocking alert. */
@@ -686,6 +697,10 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
     setIsAlarmOpen(false);
     if (notificationId) void Notifications.dismissNotificationAsync(notificationId);
     setNotificationId(null);
+    setRemainingSeconds(durationSeconds);
+    const timerParts = formatTimerParts(durationSeconds);
+    setMinutesInput(timerParts.minutes);
+    setSecondsInput(timerParts.seconds);
   };
 
   return (
@@ -693,7 +708,11 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
       <View style={styles.restTimerRow}>
         <Text style={styles.setControlLabel}>{t('workout.restTimer')}</Text>
         <View style={styles.restTimerControls}>
-          <TextInput accessibilityLabel={t('actions.setRestTimer', { name: exerciseName })} keyboardType="numbers-and-punctuation" maxLength={5} onBlur={commitTypedTime} onChangeText={setInputValue} onSubmitEditing={commitTypedTime} selectTextOnFocus style={styles.restTimerInput} value={inputValue} />
+          <View style={styles.restTimerInputGroup}>
+            <TextInput accessibilityLabel={t('actions.setRestTimerMinutes', { name: exerciseName })} keyboardType="number-pad" maxLength={3} onBlur={commitTypedTime} onChangeText={setMinutesInput} selectTextOnFocus style={styles.restTimerInput} value={minutesInput} />
+            <Text style={styles.restTimerSeparator}>:</Text>
+            <TextInput accessibilityLabel={t('actions.setRestTimerSeconds', { name: exerciseName })} keyboardType="number-pad" maxLength={2} onBlur={commitTypedTime} onChangeText={setSecondsInput} selectTextOnFocus style={styles.restTimerInput} value={secondsInput} />
+          </View>
           <Pressable accessibilityLabel={t(isRunning ? 'actions.pauseRestTimer' : 'actions.startRestTimer', { name: exerciseName })} accessibilityRole="button" onPress={toggleTimer} style={styles.setStepperButton}>
             <Ionicons color="#5AA7FF" name={isRunning ? 'pause' : 'play'} size={18} />
           </Pressable>
@@ -705,10 +724,9 @@ function RestTimer({ exerciseName }: { exerciseName: string }) {
       <Modal animationType="fade" onRequestClose={stopAlarm} transparent visible={isAlarmOpen}>
         <View style={styles.exerciseDialogOverlay}>
           <View style={styles.timerAlarmDialog}>
-            <Ionicons color="#5AA7FF" name="alarm-outline" size={42} />
             <Text style={styles.exerciseDialogTitle}>{t('workout.restComplete')}</Text>
-            <Text style={styles.timerAlarmBody}>{t('workout.restCompleteFor', { name: exerciseName })}</Text>
-            <Pressable accessibilityRole="button" onPress={stopAlarm} style={styles.saveButton}>
+
+            <Pressable accessibilityRole="button" onPress={stopAlarm} style={[styles.saveButton, styles.timerAlarmStopButton]}>
               <Text style={styles.saveButtonText}>{t('workout.stopAlarm')}</Text>
             </Pressable>
           </View>
@@ -735,12 +753,13 @@ async function scheduleTimerNotification(exerciseName: string, seconds: number):
   }
 
   const permission = await Notifications.requestPermissionsAsync();
-  if (!permission.granted) return null;
+  if (!permission.granted) {
+    throw new Error('Notification permission was not granted.');
+  }
 
   return Notifications.scheduleNotificationAsync({
     content: {
       title: t('workout.restComplete'),
-      body: t('workout.restCompleteFor', { name: exerciseName }),
       sound: notificationSound,
       priority: Notifications.AndroidNotificationPriority.MAX,
     },
@@ -757,21 +776,22 @@ async function cancelTimerNotification(notificationId: string | null): Promise<v
   if (notificationId) await Notifications.cancelScheduledNotificationAsync(notificationId);
 }
 
-/** Formats a non-negative number of seconds as a compact mm:ss timer value. */
-function formatTimerValue(totalSeconds: number): string {
+/** Splits a non-negative duration into zero-padded minute and second input values. */
+function formatTimerParts(totalSeconds: number): { minutes: string; seconds: string } {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return {
+    minutes: String(minutes).padStart(2, '0'),
+    seconds: String(seconds).padStart(2, '0'),
+  };
 }
 
-/** Parses either mm:ss or a plain seconds value into a non-negative duration. */
-function parseTimerValue(value: string): number | null {
-  const trimmedValue = value.trim();
-  if (/^\d+:\d{1,2}$/.test(trimmedValue)) {
-    const [minutes, seconds] = trimmedValue.split(':').map(Number);
-    return seconds < 60 ? minutes * 60 + seconds : null;
-  }
-  return /^\d+$/.test(trimmedValue) ? Number(trimmedValue) : null;
+/** Parses numeric minute and second fields while constraining seconds to a clock-compatible range. */
+function parseTimerParts(minutesValue: string, secondsValue: string): number | null {
+  if (!/^\d+$/.test(minutesValue) || !/^\d+$/.test(secondsValue)) return null;
+  const minutes = Number(minutesValue);
+  const seconds = Number(secondsValue);
+  return seconds < 60 ? minutes * 60 + seconds : null;
 }
 
 /** Renders free-form exercise instructions while making embedded web links tappable. */
